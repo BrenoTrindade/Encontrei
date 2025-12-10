@@ -9,7 +9,8 @@ import Drawer from '@mui/material/Drawer';
 import theme from './theme';
 import Map from './components/Map';
 import Sidebar from './components/Sidebar';
-import { Beach, beaches } from './data/beachData';
+import type { Beach } from './data/beachData';
+import { beaches } from './data/beachData';
 
 const drawerWidth = 240;
 

@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Beach } from '../data/beachData';
+import type { Beach } from '../data/beachData';
 import { customIcon } from './Icon';
 
 interface MapProps {

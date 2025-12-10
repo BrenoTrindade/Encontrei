@@ -1,5 +1,5 @@
 import { Box, Typography, Divider, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { Beach } from '../data/beachData';
+import type { Beach } from '../data/beachData';
 
 interface SidebarProps {
   selectedBeach: Beach | null;
