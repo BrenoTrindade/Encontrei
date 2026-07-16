@@ -1,138 +1,92 @@
-# Encontrei 🔎
+# Encontrei
 
-> **Seu guia para o próximo achado.** O primeiro app brasileiro de inteligência para detectorismo, cruzando dados de eventos, marés e geolocalização.
+O Encontrei é um experimento de produto para ajudar detectoristas de praia a decidir onde e quando realizar uma busca, combinando circulação, maré, recência e condições gerais em uma recomendação explicável.
 
-## 📋 Sobre o Projeto
+## Estado atual
 
-O **Encontrei** é uma plataforma desenvolvida para otimizar o tempo de quem pratica detectorismo de metal. Em vez de contar apenas com a sorte, o sistema utiliza dados para indicar os locais com maior probabilidade de achados recentes ("Hotspots").
+O projeto está construindo uma primeira fatia vertical do piloto fechado da Grande Vitória. Ele ainda não é um produto público e não promete probabilidade de achado nem certifica a legalidade de uma atividade.
 
-A aplicação cruza dados de grandes aglomerações (shows, eventos esportivos na areia, réveillon) com a tábua de marés e previsões climáticas, entregando ao usuário o melhor momento e local para sua busca, respeitando sempre a legislação vigente.
+Implementado nesta fase:
 
-### Principais Funcionalidades
-* **Radar de Oportunidades:** Mapa interativo mostrando onde ocorreram eventos recentes com grande fluxo de pessoas.
-* **Sincronia de Maré:** Alertas de "Janela de Ouro" (Maré baixa logo após um evento).
-* **Compliance Map:** Bloqueio e alerta visual de áreas protegidas pelo IPHAN (Sítios Arqueológicos) para evitar infrações legais.
-* **Diário de Achados:** Histórico pessoal geolocalizado dos itens encontrados pelo usuário.
+- frontend React/TypeScript mobile-first;
+- API TypeScript em Cloudflare Workers;
+- persistência Cloudflare D1;
+- convites individuais com cookie seguro;
+- Radar para hoje, amanhã e depois;
+- score interno versionado com faixas explicáveis;
+- mapa complementar com Leaflet/OpenStreetMap.
 
----
+Ainda fora do escopo:
 
-## 🚀 Stack Tecnológica
+- backend .NET;
+- aplicativo nativo;
+- GPS de sessões e diário de achados;
+- pagamentos;
+- rede de objetos perdidos;
+- lançamento público.
 
-O projeto foi desenhado com foco em escalabilidade e manutenibilidade, utilizando **Clean Architecture** e princípios de **SOLID**.
+O plano completo está em [encontrei_plano_implementacao.md](./encontrei_plano_implementacao.md).
 
-### Backend (.NET 10)
-* **API:** ASP.NET Core Web API.
-* **Arquitetura:** Clean Architecture (Separation of Concerns).
-* **Padrões:** CQRS (Command Query Responsibility Segregation), Repository Pattern.
-* **Data:** PostgreSQL com Entity Framework Core.
-* **Background Jobs:** Worker Services para varredura de dados de eventos e marés.
+## Estrutura
 
-### Frontend (Web)
-* **Framework:** React.js.
-
-### Mobile (App)
-* **Framework:** React Native.
-
----
-
-## 🏗️ Estrutura do Projeto
-
-A solução segue a nomenclatura padrão do ecossistema .NET:
-
-/
-├── src/
-│   ├── Encontrei.API/           # Entry point da API
-│   ├── Encontrei.Core/          # Domain Layer (Entities, Value Objects, Interfaces)
-│   ├── Encontrei.Application/   # Use Cases, DTOs, CQRS Handlers
-│   ├── Encontrei.Infra/         # Implementação de Repositories, Migrations, External, Services
-│   ├── encontrei-web/           # Frontend React
-│   └── encontrei-mobile/        # App React Native
-├── docs/                        # Documentação técnica e Diagramas
-├── docker-compose.yml           # Ambiente de desenvolvimento containerizado
-└── .gitignore
-
----
-
-## 💻 Como Começar
-
-Siga estas instruções para configurar e executar o projeto em seu ambiente de desenvolvimento.
-
-### Pré-requisitos
-
-Certifique-se de ter as seguintes ferramentas instaladas:
-* [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-* [Node.js (LTS)](https://nodejs.org/)
-* [Docker](https://www.docker.com/products/docker-desktop/) (Opcional, para usar com `docker-compose.yml`)
-
-### Instalação
-
-1. Clone o repositório:
-   ```sh
-   git clone https://github.com/BrenoTrindade/Encontrei.git
-   cd Encontrei
-   ```
-
-2. Configure as variáveis de ambiente:
-   - Crie um arquivo `.env` na raiz e preencha com as chaves de API, connection strings, etc. Baseie-se no arquivo `.env.example` (se houver).
-
-3. Restaure as dependências do Backend:
-   ```sh
-   cd src/Encontrei.API
-   dotnet restore
-   ```
-
-4. Instale as dependências do Frontend:
-   ```sh
-   cd ../../encontrei-web
-   npm install
-   ```
-
----
-
-## ▶️ Uso
-
-Para iniciar a aplicação, você pode subir os serviços individualmente ou usar o Docker.
-
-### Ambiente Local
-
-1. Iniciar o Backend (.NET API):
-   ```sh
-   cd src/Encontrei.API
-   dotnet run
-   ```
-   A API estará disponível em `http://localhost:5000`.
-
-2. Iniciar o Frontend (React):
-   ```sh
-   cd encontrei-web
-   npm start
-   ```
-   O app web estará acessível em `http://localhost:3000`.
-
-### Docker
-
-Se preferir, suba todo o ambiente com um único comando:
-```sh
-docker-compose up -d
+```text
+Encontrei/
+├── encontrei-web/
+│   ├── src/             # SPA React
+│   ├── worker/          # API e domínio do piloto
+│   ├── migrations/      # schema D1
+│   ├── scripts/         # dados locais de demonstração
+│   └── wrangler.jsonc   # configuração Cloudflare
+├── docs/
+│   └── recrutamento_piloto.md
+├── encontrei_plano_implementacao.md
+└── encontrei_recomendacoes_codex.md
 ```
 
----
+## Executar localmente
 
-## 🧪 Rodando Testes
+Pré-requisitos:
 
-Para executar os testes unitários e de integração do backend, utilize o seguinte comando na raiz da solução ou no projeto de teste específico:
-```sh
-dotnet test
+- Node.js compatível com Vite 7;
+- npm.
+
+```powershell
+cd encontrei-web
+npm install
+npm run db:migrate:local
+npm run db:seed:local
+npm run dev
 ```
 
----
+Abra o endereço informado pelo Vite com o convite de desenvolvimento:
 
-## 🤝 Contribuindo
+```text
+http://localhost:5173/?invite=piloto-demo
+```
 
-Contribuições são o que tornam a comunidade open source um lugar incrível para aprender, inspirar e criar. Qualquer contribuição que você fizer será **muito apreciada**.
+O seed é somente para desenvolvimento local e usa oportunidades datadas de 15 a 17 de julho de 2026.
 
-1. Faça um *Fork* do projeto.
-2. Crie uma *Branch* para sua feature (`git checkout -b feature/AmazingFeature`).
-3. Faça o *Commit* de suas alterações (`git commit -m 'Add some AmazingFeature'`).
-4. Faça o *Push* para a Branch (`git push origin feature/AmazingFeature`).
-5. Abra um *Pull Request*.
+## Verificação
+
+```powershell
+cd encontrei-web
+npm test
+npm run lint
+npm run build
+```
+
+## Cloudflare
+
+O `database_id` presente em `wrangler.jsonc` é intencionalmente um placeholder local. Antes de um deploy remoto:
+
+1. Criar o banco D1 real.
+2. Substituir o identificador no arquivo de configuração.
+3. Aplicar migrations no ambiente remoto.
+4. Criar convites remotos sem reutilizar o token de demonstração.
+5. Executar smoke tests antes de compartilhar qualquer link.
+
+Não versione credenciais ou tokens reais.
+
+## Próximo gate de produto
+
+O piloto só deve ser aberto após alcançar dez participantes elegíveis e concluir as verificações descritas no plano. O roteiro de recrutamento está em [docs/recrutamento_piloto.md](./docs/recrutamento_piloto.md).
