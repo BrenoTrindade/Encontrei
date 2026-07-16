@@ -1,73 +1,79 @@
-import { useState } from 'react';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+import { useMemo, useState } from 'react';
+import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
+import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import InvitationScreen from './features/invitations/InvitationScreen';
+import OpportunityRadar from './features/opportunities/OpportunityRadar';
 import theme from './theme';
-import Map from './components/Map';
-import Sidebar from './components/Sidebar';
-import type { Beach } from './data/beachData';
-import { beaches } from './data/beachData';
 
-const drawerWidth = 240;
+type AccessState = 'invitation' | 'radar' | 'missing-invitation';
 
 function App() {
-  const [selectedBeach, setSelectedBeach] = useState<Beach | null>(null);
-  const [tideFilter, setTideFilter] = useState('All');
+  const invitationToken = useMemo(
+    () => new URLSearchParams(window.location.search).get('invite'),
+    [],
+  );
+  const [accessState, setAccessState] = useState<AccessState>(
+    invitationToken ? 'invitation' : 'radar',
+  );
 
-  const handleTideFilterChange = (tide: string) => {
-    setTideFilter(tide);
-    setSelectedBeach(null); // Reset selection when filter changes
+  const removeInvitationFromAddress = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   };
 
-  const filteredBeaches = beaches.filter(beach => {
-    if (tideFilter === 'All') {
-      return true;
-    }
-    return beach.tide === tideFilter;
-  });
+  const handleAccepted = () => {
+    removeInvitationFromAddress();
+    setAccessState('radar');
+  };
+
+  const handleUnauthorized = () => {
+    setAccessState('missing-invitation');
+  };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
-        <Drawer
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-            },
-          }}
-          variant="permanent"
-          anchor="left"
-        >
-          <Toolbar />
-          <Sidebar 
-            selectedBeach={selectedBeach} 
-            tideFilter={tideFilter}
-            onTideFilterChange={handleTideFilterChange}
-          />
-        </Drawer>
+      <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
         <Box
-          component="main"
-          sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}
+          component="header"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            maxWidth: 960,
+            mx: 'auto',
+            px: { xs: 2, sm: 3 },
+            py: 2,
+          }}
         >
-          <AppBar position="static">
-            <Toolbar>
-              <Typography variant="h6" noWrap component="div">
-                Encontrei 🔎
-              </Typography>
-            </Toolbar>
-          </AppBar>
-          <Box sx={{ flexGrow: 1 }}>
-            <Map beaches={filteredBeaches} onBeachSelect={setSelectedBeach} />
-          </Box>
+          <ExploreOutlinedIcon color="primary" aria-hidden="true" />
+          <Typography component="span" variant="h6" fontWeight={800}>
+            Encontrei
+          </Typography>
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ ml: 'auto', color: 'text.secondary' }}
+          >
+            Piloto fechado
+          </Typography>
         </Box>
+
+        {accessState === 'invitation' && invitationToken ? (
+          <InvitationScreen token={invitationToken} onAccepted={handleAccepted} />
+        ) : null}
+
+        {accessState === 'radar' ? (
+          <OpportunityRadar onUnauthorized={handleUnauthorized} />
+        ) : null}
+
+        {accessState === 'missing-invitation' ? (
+          <InvitationScreen token={null} onAccepted={handleAccepted} />
+        ) : null}
       </Box>
     </ThemeProvider>
   );
