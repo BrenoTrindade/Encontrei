@@ -26,7 +26,7 @@ describe('generateDailyOpportunity', () => {
       forecast: {
         retrievedAtUtc: '2032-09-30T12:00:00.000Z',
         freshUntilUtc: '2032-09-30T18:00:00.000Z',
-        usableUntilUtc: '2032-10-01T12:00:00.000Z',
+        usableUntilUtc: '2032-10-03T12:00:00.000Z',
         weatherSourceUrl: 'https://api.open-meteo.com/v1/dwd-icon',
         marineSourceUrl: 'https://marine-api.open-meteo.com/v1/marine',
         points: [{
@@ -57,7 +57,7 @@ describe('generateDailyOpportunity', () => {
       confidence: 'medium',
       confidenceReasons: ['Circulação usa uma estimativa atual.'],
       staleAt: '2032-09-30T18:00:00.000Z',
-      expiresAt: '2032-10-01T12:00:00.000Z',
+      expiresAt: '2032-10-03T12:00:00.000Z',
     });
     expect(result?.breakdown).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -78,5 +78,8 @@ describe('generateDailyOpportunity', () => {
       'CHM — Porto de Tubarão',
       'Open-Meteo — ICON/GWAM do DWD',
     ]);
+    expect(Date.parse(result?.expiresAt ?? '')).toBeGreaterThan(
+      Date.parse(result?.recommendedEndUtc ?? ''),
+    );
   });
 });

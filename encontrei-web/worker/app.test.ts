@@ -18,6 +18,7 @@ const opportunity = {
   summary: 'Boa janela de maré após circulação recente.',
   restrictionStatus: 'needs_verification' as const,
   stale: false,
+  expiresAt: '2026-07-19T03:00:00.000Z',
   tideStationName: 'Porto de Tubarão',
   tideStationDistanceKm: 5.2,
 };

@@ -25,6 +25,7 @@ export interface OpportunitySummary {
   summary: string;
   restrictionStatus: RestrictionStatus;
   stale: boolean;
+  expiresAt: string;
   tideStationName: string;
   tideStationDistanceKm: number;
 }

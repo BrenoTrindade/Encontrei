@@ -224,7 +224,7 @@ export class OpenMeteoClient {
         marineGridLongitude: marine.longitude,
         retrievedAtUtc: retrievedAt.toISOString(),
         freshUntilUtc: addHours(retrievedAt, 6),
-        usableUntilUtc: addHours(retrievedAt, 24),
+        usableUntilUtc: addHours(retrievedAt, 72),
         weatherSourceUrl: weatherUrl,
         marineSourceUrl: marineUrl,
         weatherResponseSha256,

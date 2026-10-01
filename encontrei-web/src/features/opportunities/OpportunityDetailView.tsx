@@ -124,6 +124,9 @@ export default function OpportunityDetailView({
           {formatOpportunityWindow(detail.recommendedStartUtc, detail.recommendedEndUtc)}
         </Typography>
         <Typography>{detail.summary}</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+          Dados válidos até {formatSourceUpdatedAt(detail.expiresAt)}
+        </Typography>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
           <WavesOutlinedIcon color="primary" aria-hidden="true" />
           <Typography variant="body2">

@@ -36,6 +36,7 @@ interface OpportunityRow {
   sources_json: string;
   restriction_summary: string;
   stale_at: string | null;
+  expires_at: string;
 }
 
 const SELECT_PUBLISHED = `
@@ -59,7 +60,8 @@ const SELECT_PUBLISHED = `
     opportunity_snapshot.breakdown_json,
     opportunity_snapshot.sources_json,
     opportunity_snapshot.restriction_summary,
-    opportunity_snapshot.stale_at
+    opportunity_snapshot.stale_at,
+    opportunity_snapshot.expires_at
   FROM opportunity_snapshot
   INNER JOIN beach ON beach.id = opportunity_snapshot.beach_id
   INNER JOIN tide_station ON tide_station.id = beach.tide_station_id
@@ -161,6 +163,7 @@ function toSummary(row: OpportunityRow, now: Date): OpportunitySummary {
     summary: row.summary,
     restrictionStatus: row.restriction_status,
     stale,
+    expiresAt: row.expires_at,
     tideStationName: row.tide_station_name,
     tideStationDistanceKm: distanceInKm(
       { latitude: row.latitude, longitude: row.longitude },
