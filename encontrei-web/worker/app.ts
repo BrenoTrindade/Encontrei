@@ -16,6 +16,11 @@ const SESSION_COOKIE = 'encontrei_session';
 const SESSION_MAX_AGE_SECONDS = 28 * 24 * 60 * 60;
 const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+function requiresSecureCookie(requestUrl: string): boolean {
+  const { hostname } = new URL(requestUrl);
+  return hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]';
+}
+
 export function createApp(dependencies: AppDependencies) {
   const app = new Hono<{ Variables: Variables }>();
 
@@ -47,7 +52,7 @@ export function createApp(dependencies: AppDependencies) {
 
     setCookie(context, SESSION_COOKIE, invitation.sessionToken, {
       httpOnly: true,
-      secure: true,
+      secure: requiresSecureCookie(context.req.url),
       sameSite: 'Strict',
       maxAge: SESSION_MAX_AGE_SECONDS,
       path: '/',

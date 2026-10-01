@@ -1,11 +1,11 @@
-export type ScoreBand = 'low' | 'medium' | 'high';
-export type ConfidenceLevel = 'low' | 'medium' | 'high';
-export type RestrictionStatus =
-  | 'allowed_to_recommend'
-  | 'needs_verification'
-  | 'not_recommended';
+import type {
+  Confidence as ConfidenceLevel,
+  OpportunityFactor,
+  RestrictionStatus,
+  ScoreBand,
+} from '../../../shared/opportunity-contract';
 
-type FactorName = 'circulation' | 'tide' | 'recency' | 'conditions';
+export type { ConfidenceLevel, RestrictionStatus, ScoreBand };
 
 export interface FactorInput {
   normalizedValue: number;
@@ -22,9 +22,9 @@ export interface OpportunityScoreInput {
 }
 
 export interface OpportunityScoreBreakdown {
-  factor: FactorName;
+  factor: OpportunityFactor;
   normalizedValue: number;
-  weight: number;
+  maxContribution: number;
   contribution: number;
   explanation: string;
   sourceUrl?: string;
@@ -38,7 +38,7 @@ export interface OpportunityScoreResult {
   breakdown: OpportunityScoreBreakdown[];
 }
 
-const FACTORS: ReadonlyArray<{ name: FactorName; weight: number }> = [
+const FACTORS: ReadonlyArray<{ name: OpportunityFactor; weight: number }> = [
   { name: 'circulation', weight: 40 },
   { name: 'tide', weight: 30 },
   { name: 'recency', weight: 20 },
@@ -63,7 +63,7 @@ export function calculateOpportunity(input: OpportunityScoreInput): OpportunityS
     return {
       factor: name,
       normalizedValue: factor.normalizedValue,
-      weight,
+      maxContribution: weight,
       contribution: Math.round(factor.normalizedValue * weight),
       explanation: factor.explanation,
       ...(factor.sourceUrl ? { sourceUrl: factor.sourceUrl } : {}),

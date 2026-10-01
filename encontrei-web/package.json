@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "db:migrate:local": "wrangler d1 migrations apply encontrei-pilot --local",
     "db:seed:local": "wrangler d1 execute encontrei-pilot --local --file=./scripts/seed-dev.sql",
+    "data:refresh:real:local": "node --use-system-ca --import tsx ./scripts/refresh-real-data-local.ts --allow-local-chm",
     "deploy": "vite build && wrangler deploy"
   },
   "dependencies": {
@@ -39,6 +40,8 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "pdfjs-dist": "^6.3.289",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",

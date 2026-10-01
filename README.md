@@ -14,6 +14,8 @@ Implementado nesta fase:
 - convites individuais com cookie seguro;
 - Radar para hoje, amanhã e depois;
 - score interno versionado com faixas explicáveis;
+- importação local auditável de marés oficiais do CHM e previsões ICON/GWAM via Open-Meteo;
+- indicação de confiança, validade, atribuição e limitações das fontes;
 - mapa complementar com Leaflet/OpenStreetMap.
 
 Ainda fora do escopo:
@@ -35,7 +37,7 @@ Encontrei/
 │   ├── src/             # SPA React
 │   ├── worker/          # API e domínio do piloto
 │   ├── migrations/      # schema D1
-│   ├── scripts/         # dados locais de demonstração
+│   ├── scripts/         # seed e atualização local de dados
 │   └── wrangler.jsonc   # configuração Cloudflare
 ├── docs/
 │   └── recrutamento_piloto.md
@@ -55,6 +57,7 @@ cd encontrei-web
 npm install
 npm run db:migrate:local
 npm run db:seed:local
+npm run data:refresh:real:local
 npm run dev
 ```
 
@@ -64,7 +67,14 @@ Abra o endereço informado pelo Vite com o convite de desenvolvimento:
 http://localhost:5173/?invite=piloto-demo
 ```
 
-O seed é somente para desenvolvimento local e usa oportunidades datadas de 15 a 17 de julho de 2026.
+O seed cria o convite local e dados demonstrativos expirados. O comando
+`data:refresh:real:local` substitui a experiência visível por dados atuais: busca as tábuas de
+2026 dos portos de Tubarão e Vitória e uma previsão de 72 horas para Camburi, Praia da Costa e
+Itaparica. Ele registra checksums, modelos, coordenadas de grade e validade de cada lote.
+
+As tábuas do CHM e seus valores derivados permanecem exclusivamente no banco local e não devem
+ser publicados enquanto os termos conflitantes de reutilização não forem esclarecidos por escrito.
+Os PDFs baixados, o SQL gerado e o banco local ficam fora do Git.
 
 ## Verificação
 
