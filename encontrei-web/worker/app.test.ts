@@ -14,9 +14,13 @@ const opportunity = {
   recommendedEndUtc: '2026-07-16T10:30:00.000Z',
   scoreBand: 'high' as const,
   confidence: 'medium' as const,
+  confidenceReasons: ['Circulação usa uma estimativa atual.'],
   summary: 'Boa janela de maré após circulação recente.',
   restrictionStatus: 'needs_verification' as const,
+  stale: false,
+  expiresAt: '2026-07-19T03:00:00.000Z',
   tideStationName: 'Porto de Tubarão',
+  tideStationDistanceKm: 5.2,
 };
 
 function dependencies(): AppDependencies {
@@ -36,6 +40,7 @@ function dependencies(): AppDependencies {
             ...opportunity,
             breakdown: [{
               factor: 'tide',
+              normalizedValue: 1,
               contribution: 30,
               maxContribution: 30,
               explanation: 'Maré mínima dentro da janela.',
@@ -54,16 +59,29 @@ function dependencies(): AppDependencies {
 
 describe('participant API', () => {
   it('exchanges a valid invitation for a secure session cookie', async () => {
-    const response = await createApp(dependencies()).request('/api/invitations/accept', {
+    const response = await createApp(dependencies()).request('https://encontrei.example/api/invitations/accept', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ token: 'convite-valido' }),
     });
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ participantCode: 'P-001' });
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
     expect(response.headers.get('set-cookie')).toContain(
       'encontrei_session=sessao-segura; Max-Age=2419200; Path=/; HttpOnly; Secure; SameSite=Strict',
+    );
+  });
+
+  it('allows the development session cookie on localhost HTTP', async () => {
+    const response = await createApp(dependencies()).request('http://127.0.0.1:5173/api/invitations/accept', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token: 'convite-valido' }),
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('set-cookie')).toBe(
+      'encontrei_session=sessao-segura; Max-Age=2419200; Path=/; HttpOnly; SameSite=Strict',
     );
   });
 

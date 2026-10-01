@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import type { OpportunitySummary } from '../../types/opportunity';
 import { formatDistance } from '../../utils/distance';
-import { formatOpportunityWindow } from '../../utils/date';
+import { formatOpportunityWindow, formatSourceUpdatedAt } from '../../utils/date';
 import {
   confidenceLabel,
   restrictionLabel,
@@ -47,6 +47,9 @@ export default function OpportunityCard({
               label={scoreBandLabel[opportunity.scoreBand]}
             />
             <Chip size="small" variant="outlined" label={confidenceLabel[opportunity.confidence]} />
+            {opportunity.stale ? (
+              <Chip size="small" color="warning" label="Dados desatualizados" />
+            ) : null}
           </Stack>
 
           <Stack direction="row" alignItems="flex-start" spacing={1}>
@@ -74,7 +77,7 @@ export default function OpportunityCard({
             <Stack direction="row" spacing={1} alignItems="center">
               <WavesOutlinedIcon fontSize="small" color="action" aria-hidden="true" />
               <Typography variant="body2" color="text.secondary">
-                Referência de maré: {opportunity.tideStationName}
+                Referência de maré: {opportunity.tideStationName} ({formatDistance(opportunity.tideStationDistanceKm)})
               </Typography>
             </Stack>
             {distanceKm !== undefined ? (
@@ -88,6 +91,15 @@ export default function OpportunityCard({
           </Stack>
 
           <Typography variant="body2">{opportunity.summary}</Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            Dados válidos até {formatSourceUpdatedAt(opportunity.expiresAt)}
+          </Typography>
+
+          {opportunity.stale ? (
+            <Typography variant="caption" color="warning.dark" display="block" sx={{ mt: 1.5 }}>
+              A atualização automática atrasou. Confira as fontes antes de se deslocar.
+            </Typography>
+          ) : null}
 
           {hasRestrictionWarning ? (
             <Typography

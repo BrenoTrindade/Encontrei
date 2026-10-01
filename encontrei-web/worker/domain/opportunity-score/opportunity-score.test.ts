@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assessOpportunityConfidence,
   calculateOpportunity,
+  degradeConfidenceWhenStale,
 } from './opportunity-score';
 
 describe('calculateOpportunity', () => {
@@ -14,6 +15,7 @@ describe('calculateOpportunity', () => {
       tide: {
         normalizedValue: 1,
         explanation: 'Maré mínima dentro da janela.',
+        sourceUrl: 'https://www.marinha.mil.br/chm/',
       },
       recency: {
         normalizedValue: 1,
@@ -32,11 +34,36 @@ describe('calculateOpportunity', () => {
       scoreVersion: 'score-v0.1',
       actionable: true,
     });
-    expect(result.breakdown.map(({ factor, contribution }) => ({ factor, contribution }))).toEqual([
-      { factor: 'circulation', contribution: 40 },
-      { factor: 'tide', contribution: 30 },
-      { factor: 'recency', contribution: 20 },
-      { factor: 'conditions', contribution: 10 },
+    expect(result.breakdown).toEqual([
+      {
+        factor: 'circulation',
+        normalizedValue: 1,
+        maxContribution: 40,
+        contribution: 40,
+        explanation: 'Evento recente com circulação confirmada.',
+      },
+      {
+        factor: 'tide',
+        normalizedValue: 1,
+        maxContribution: 30,
+        contribution: 30,
+        explanation: 'Maré mínima dentro da janela.',
+        sourceUrl: 'https://www.marinha.mil.br/chm/',
+      },
+      {
+        factor: 'recency',
+        normalizedValue: 1,
+        maxContribution: 20,
+        contribution: 20,
+        explanation: 'Evento terminou há poucas horas.',
+      },
+      {
+        factor: 'conditions',
+        normalizedValue: 1,
+        maxContribution: 10,
+        contribution: 10,
+        explanation: 'Condições adequadas para a busca.',
+      },
     ]);
   });
 
@@ -94,5 +121,16 @@ describe('assessOpportunityConfidence', () => {
       level: 'low',
       reasons: ['Circulação está ausente.', 'Condições estão desatualizadas.'],
     });
+  });
+
+  it('downgrades a persisted confidence label when the snapshot becomes stale', () => {
+    expect(degradeConfidenceWhenStale('medium', ['Circulação usa uma estimativa atual.'], true))
+      .toEqual({
+        level: 'low',
+        reasons: [
+          'Circulação usa uma estimativa atual.',
+          'Condições meteorológicas e marinhas estão desatualizadas.',
+        ],
+      });
   });
 });

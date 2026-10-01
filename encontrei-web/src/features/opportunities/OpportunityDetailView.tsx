@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { ApiError, getOpportunity } from '../../services/api';
 import type { OpportunityDetail } from '../../types/opportunity';
 import { formatOpportunityWindow, formatSourceUpdatedAt } from '../../utils/date';
+import { formatDistance } from '../../utils/distance';
 import {
   confidenceLabel,
   factorLabel,
@@ -98,7 +99,15 @@ export default function OpportunityDetailView({
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
         <Chip color={scoreBandColor[detail.scoreBand]} label={scoreBandLabel[detail.scoreBand]} />
         <Chip variant="outlined" label={confidenceLabel[detail.confidence]} />
+        {detail.stale ? <Chip color="warning" label="Dados desatualizados" /> : null}
       </Stack>
+
+      {detail.stale ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          A atualização automática atrasou. Use esta janela apenas como referência e confira as
+          fontes antes de se deslocar.
+        </Alert>
+      ) : null}
 
       <Typography variant="h3" component="h1" sx={{ mb: 0.5 }}>
         {detail.beach.name}
@@ -115,10 +124,14 @@ export default function OpportunityDetailView({
           {formatOpportunityWindow(detail.recommendedStartUtc, detail.recommendedEndUtc)}
         </Typography>
         <Typography>{detail.summary}</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+          Dados válidos até {formatSourceUpdatedAt(detail.expiresAt)}
+        </Typography>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
           <WavesOutlinedIcon color="primary" aria-hidden="true" />
           <Typography variant="body2">
-            Estação de referência: <strong>{detail.tideStationName}</strong>
+            Estação de referência: <strong>{detail.tideStationName}</strong> — aproximadamente{' '}
+            {formatDistance(detail.tideStationDistanceKm)} da praia
           </Typography>
         </Stack>
       </Paper>
@@ -131,7 +144,22 @@ export default function OpportunityDetailView({
         <Typography variant="caption" display="block" sx={{ mt: 1 }}>
           Esta revisão não é uma autorização. Verifique sinalização, regras e condições no local.
         </Typography>
+        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+          Se houver possível achado arqueológico, interrompa a atividade, preserve o local e
+          comunique o IPHAN ou a autoridade responsável.
+        </Typography>
       </Alert>
+
+      <Typography variant="h5" component="h2" gutterBottom>
+        Confiança dos dados
+      </Typography>
+      <Stack component="ul" spacing={0.5} sx={{ mt: 0, mb: 3, pl: 2.5 }}>
+        {detail.confidenceReasons.map((reason) => (
+          <Typography component="li" variant="body2" color="text.secondary" key={reason}>
+            {reason}
+          </Typography>
+        ))}
+      </Stack>
 
       <Typography variant="h5" component="h2" gutterBottom>
         Por que esta faixa?
@@ -189,6 +217,16 @@ export default function OpportunityDetailView({
               <Typography variant="caption" color="text.secondary" display="block">
                 Atualizada em {formatSourceUpdatedAt(source.updatedAt)}
               </Typography>
+              {source.attribution ? (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Atribuição: {source.attribution}
+                </Typography>
+              ) : null}
+              {source.limitations ? (
+                <Typography variant="caption" color="warning.dark" display="block" sx={{ mt: 0.5 }}>
+                  Limitação: {source.limitations}
+                </Typography>
+              ) : null}
             </Box>
           ))}
         </Stack>
