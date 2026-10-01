@@ -145,3 +145,18 @@ export function assessOpportunityConfidence(
     reasons: ['Todos os dados essenciais são diretos e atuais.'],
   };
 }
+
+export function degradeConfidenceWhenStale(
+  currentLevel: ConfidenceLevel,
+  currentReasons: string[],
+  stale: boolean,
+): { level: ConfidenceLevel; reasons: string[] } {
+  if (!stale) return { level: currentLevel, reasons: currentReasons };
+  const staleReason = 'Condições meteorológicas e marinhas estão desatualizadas.';
+  return {
+    level: 'low',
+    reasons: currentReasons.includes(staleReason)
+      ? currentReasons
+      : [...currentReasons, staleReason],
+  };
+}

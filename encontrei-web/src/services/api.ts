@@ -1,5 +1,4 @@
 import type {
-  AcceptInvitationResponse,
   OpportunityDetail,
   OpportunitySummary,
 } from '../types/opportunity';
@@ -41,10 +40,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(response.status, message);
   }
 
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
-export function acceptInvitation(token: string): Promise<AcceptInvitationResponse> {
+export function acceptInvitation(token: string): Promise<void> {
   return request('/api/invitations/accept', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

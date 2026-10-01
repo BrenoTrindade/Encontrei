@@ -58,7 +58,7 @@ export function createApp(dependencies: AppDependencies) {
       path: '/',
     });
 
-    return context.json({ participantCode: invitation.participantCode });
+    return context.body(null, 204);
   });
 
   const requireParticipant: MiddlewareHandler<{ Variables: Variables }> = async (

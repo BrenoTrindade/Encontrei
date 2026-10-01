@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assessOpportunityConfidence,
   calculateOpportunity,
+  degradeConfidenceWhenStale,
 } from './opportunity-score';
 
 describe('calculateOpportunity', () => {
@@ -120,5 +121,16 @@ describe('assessOpportunityConfidence', () => {
       level: 'low',
       reasons: ['Circulação está ausente.', 'Condições estão desatualizadas.'],
     });
+  });
+
+  it('downgrades a persisted confidence label when the snapshot becomes stale', () => {
+    expect(degradeConfidenceWhenStale('medium', ['Circulação usa uma estimativa atual.'], true))
+      .toEqual({
+        level: 'low',
+        reasons: [
+          'Circulação usa uma estimativa atual.',
+          'Condições meteorológicas e marinhas estão desatualizadas.',
+        ],
+      });
   });
 });

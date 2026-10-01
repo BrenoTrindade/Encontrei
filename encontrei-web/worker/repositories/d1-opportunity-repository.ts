@@ -12,6 +12,8 @@ import type {
   BreakdownItem,
   OpportunitySource,
 } from '../../shared/opportunity-contract';
+import { distanceInKm } from '../../shared/geography';
+import { degradeConfidenceWhenStale } from '../domain/opportunity-score/opportunity-score';
 
 interface OpportunityRow {
   id: string;
@@ -28,6 +30,8 @@ interface OpportunityRow {
   summary: string;
   restriction_status: RestrictionStatus;
   tide_station_name: string;
+  tide_station_latitude: number;
+  tide_station_longitude: number;
   breakdown_json: string;
   sources_json: string;
   restriction_summary: string;
@@ -50,6 +54,8 @@ const SELECT_PUBLISHED = `
     opportunity_snapshot.summary,
     opportunity_snapshot.restriction_status,
     tide_station.name AS tide_station_name,
+    tide_station.latitude AS tide_station_latitude,
+    tide_station.longitude AS tide_station_longitude,
     opportunity_snapshot.breakdown_json,
     opportunity_snapshot.sources_json,
     opportunity_snapshot.restriction_summary,
@@ -132,6 +138,12 @@ export function parseOpportunitySources(value: string): OpportunitySource[] {
 }
 
 function toSummary(row: OpportunityRow, now: Date): OpportunitySummary {
+  const stale = row.stale_at !== null && Date.parse(row.stale_at) <= now.getTime();
+  const confidence = degradeConfidenceWhenStale(
+    row.confidence,
+    parseStringArray(row.confidence_reasons_json, 'confidence_reasons_json'),
+    stale,
+  );
   return {
     id: row.id,
     beach: {
@@ -144,12 +156,16 @@ function toSummary(row: OpportunityRow, now: Date): OpportunitySummary {
     recommendedStartUtc: row.recommended_start_utc,
     recommendedEndUtc: row.recommended_end_utc,
     scoreBand: row.score_band,
-    confidence: row.confidence,
-    confidenceReasons: parseStringArray(row.confidence_reasons_json, 'confidence_reasons_json'),
+    confidence: confidence.level,
+    confidenceReasons: confidence.reasons,
     summary: row.summary,
     restrictionStatus: row.restriction_status,
-    stale: row.stale_at !== null && Date.parse(row.stale_at) <= now.getTime(),
+    stale,
     tideStationName: row.tide_station_name,
+    tideStationDistanceKm: distanceInKm(
+      { latitude: row.latitude, longitude: row.longitude },
+      { latitude: row.tide_station_latitude, longitude: row.tide_station_longitude },
+    ),
   };
 }
 

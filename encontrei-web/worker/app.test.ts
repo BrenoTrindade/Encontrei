@@ -19,6 +19,7 @@ const opportunity = {
   restrictionStatus: 'needs_verification' as const,
   stale: false,
   tideStationName: 'Porto de Tubarão',
+  tideStationDistanceKm: 5.2,
 };
 
 function dependencies(): AppDependencies {
@@ -63,8 +64,8 @@ describe('participant API', () => {
       body: JSON.stringify({ token: 'convite-valido' }),
     });
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ participantCode: 'P-001' });
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
     expect(response.headers.get('set-cookie')).toContain(
       'encontrei_session=sessao-segura; Max-Age=2419200; Path=/; HttpOnly; Secure; SameSite=Strict',
     );
@@ -77,7 +78,7 @@ describe('participant API', () => {
       body: JSON.stringify({ token: 'convite-valido' }),
     });
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(204);
     expect(response.headers.get('set-cookie')).toBe(
       'encontrei_session=sessao-segura; Max-Age=2419200; Path=/; HttpOnly; SameSite=Strict',
     );

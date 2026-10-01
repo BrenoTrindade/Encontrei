@@ -17,20 +17,20 @@ describe('generateDailyOpportunity', () => {
         name: 'Porto de Tubarão',
         sourceUrl: 'https://www.marinha.mil.br/chm/',
       },
-      localDate: '2026-10-01',
+      localDate: '2032-10-01',
       tides: [
-        { localDate: '2026-10-01', forecastAtUtc: '2026-10-01T08:44:00.000Z', heightM: 1.29 },
-        { localDate: '2026-10-01', forecastAtUtc: '2026-10-01T15:01:00.000Z', heightM: 0.53 },
-        { localDate: '2026-10-01', forecastAtUtc: '2026-10-01T20:19:00.000Z', heightM: 1.14 },
+        { localDate: '2032-10-01', forecastAtUtc: '2032-10-01T08:15:00.000Z', heightM: 1.8 },
+        { localDate: '2032-10-01', forecastAtUtc: '2032-10-01T14:30:00.000Z', heightM: 0.5 },
+        { localDate: '2032-10-01', forecastAtUtc: '2032-10-01T20:45:00.000Z', heightM: 1.6 },
       ],
       forecast: {
-        retrievedAtUtc: '2026-09-30T12:00:00.000Z',
-        freshUntilUtc: '2026-09-30T18:00:00.000Z',
-        usableUntilUtc: '2026-10-01T00:00:00.000Z',
+        retrievedAtUtc: '2032-09-30T12:00:00.000Z',
+        freshUntilUtc: '2032-09-30T18:00:00.000Z',
+        usableUntilUtc: '2032-10-01T12:00:00.000Z',
         weatherSourceUrl: 'https://api.open-meteo.com/v1/dwd-icon',
         marineSourceUrl: 'https://marine-api.open-meteo.com/v1/marine',
         points: [{
-          validAtUtc: '2026-10-01T15:00:00.000Z',
+          validAtUtc: '2032-10-01T14:00:00.000Z',
           precipitationProbability: 10,
           precipitationMm: 0,
           weatherCode: 1,
@@ -45,19 +45,19 @@ describe('generateDailyOpportunity', () => {
           swellPeriodSeconds: 10,
         }],
       },
-      generatedAtUtc: '2026-09-30T12:00:00.000Z',
+      generatedAtUtc: '2032-09-30T12:00:00.000Z',
     });
 
     expect(result).toMatchObject({
-      id: 'opp-camburi-2026-10-01-score-v0.1',
-      recommendedStartUtc: '2026-10-01T14:01:00.000Z',
-      recommendedEndUtc: '2026-10-01T16:01:00.000Z',
+      id: 'opp-camburi-2032-10-01-score-v0.1-20320930120000',
+      recommendedStartUtc: '2032-10-01T13:30:00.000Z',
+      recommendedEndUtc: '2032-10-01T15:30:00.000Z',
       scoreInternal: 48,
       scoreBand: 'medium',
       confidence: 'medium',
       confidenceReasons: ['Circulação usa uma estimativa atual.'],
-      staleAt: '2026-09-30T18:00:00.000Z',
-      expiresAt: '2026-10-01T00:00:00.000Z',
+      staleAt: '2032-09-30T18:00:00.000Z',
+      expiresAt: '2032-10-01T12:00:00.000Z',
     });
     expect(result?.breakdown).toEqual(expect.arrayContaining([
       expect.objectContaining({

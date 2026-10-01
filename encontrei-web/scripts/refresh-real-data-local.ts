@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { parseChmPdf } from './lib/chm-pdf.ts';
 import { OpenMeteoClient } from '../worker/integrations/open-meteo/open-meteo-client.ts';
+import { fetchForecastsWithLocalCache } from './lib/forecast-cache.ts';
 import { generateDailyOpportunity } from '../worker/domain/opportunities/generate-opportunity.ts';
 import type { TidePredictionInput } from '../worker/domain/tides/chm-tide-table.ts';
 
@@ -32,15 +33,15 @@ const stations = [
 const beaches = [
   {
     id: 'camburi', slug: 'praia-de-camburi', name: 'Praia de Camburi', municipality: 'Vitória',
-    latitude: -20.2839, longitude: -40.2896, stationId: 'porto-tubarao', habitualCirculation: 0.25,
+    latitude: -20.2839, longitude: -40.2896, stationId: 'porto-tubarao', habitualCirculation: null,
   },
   {
     id: 'praia-da-costa', slug: 'praia-da-costa', name: 'Praia da Costa', municipality: 'Vila Velha',
-    latitude: -20.3369, longitude: -40.2825, stationId: 'porto-vitoria', habitualCirculation: 0.25,
+    latitude: -20.3369, longitude: -40.2825, stationId: 'porto-vitoria', habitualCirculation: null,
   },
   {
     id: 'itaparica', slug: 'praia-de-itaparica', name: 'Praia de Itaparica', municipality: 'Vila Velha',
-    latitude: -20.3704, longitude: -40.3004, stationId: 'porto-vitoria', habitualCirculation: 0.25,
+    latitude: -20.3704, longitude: -40.3004, stationId: 'porto-vitoria', habitualCirculation: null,
   },
 ] as const;
 
@@ -119,9 +120,15 @@ async function main(): Promise<void> {
     tideTables.set(station.id, await parseChmPdf(bytes, 2026));
   }
 
-  const forecasts = await new OpenMeteoClient().fetch72Hours(beaches.map((beach) => ({
+  const forecastBeaches = beaches.map((beach) => ({
     id: beach.id, latitude: beach.latitude, longitude: beach.longitude,
-  })));
+  }));
+  const forecasts = await fetchForecastsWithLocalCache(
+    new OpenMeteoClient(),
+    forecastBeaches,
+    join(process.cwd(), '.wrangler', 'cache', 'open-meteo-forecast.json'),
+    RETRIEVED_AT,
+  );
   const forecastByBeach = new Map(forecasts.map((forecast) => [forecast.beachId, forecast]));
   const dates = localDates(RETRIEVED_AT);
   const opportunities = beaches.flatMap((beach) => {
@@ -244,6 +251,12 @@ async function main(): Promise<void> {
   }
 
   for (const opportunity of opportunities) {
+    statements.push(`UPDATE opportunity_snapshot
+      SET status = 'hidden'
+      WHERE beach_id = ${quoted(opportunity.beachId)}
+        AND local_date = ${quoted(opportunity.localDate)}
+        AND id <> ${quoted(opportunity.id)}
+        AND status = 'published';`);
     statements.push(`INSERT INTO opportunity_snapshot (
       id, beach_id, local_date, recommended_start_utc, recommended_end_utc, score_internal,
       score_band, score_version, confidence, confidence_reasons_json, summary, restriction_status,
@@ -258,17 +271,7 @@ async function main(): Promise<void> {
       ${json(opportunity.breakdown)}, ${json(opportunity.sources)}, ${quoted(opportunity.generatedAtUtc)},
       ${quoted(opportunity.generatedAtUtc)}, ${quoted(opportunity.staleAt)}, ${quoted(opportunity.expiresAt)},
       ${json(opportunity.inputs)}, 'published'
-    ) ON CONFLICT(id) DO UPDATE SET
-      recommended_start_utc=excluded.recommended_start_utc,
-      recommended_end_utc=excluded.recommended_end_utc,
-      score_internal=excluded.score_internal, score_band=excluded.score_band,
-      score_version=excluded.score_version, confidence=excluded.confidence,
-      confidence_reasons_json=excluded.confidence_reasons_json, summary=excluded.summary,
-      restriction_status=excluded.restriction_status, restriction_summary=excluded.restriction_summary,
-      breakdown_json=excluded.breakdown_json, sources_json=excluded.sources_json,
-      generated_at=excluded.generated_at, published_at=excluded.published_at,
-      stale_at=excluded.stale_at, expires_at=excluded.expires_at, inputs_json=excluded.inputs_json,
-      status='published';`);
+    ) ON CONFLICT(id) DO NOTHING;`);
   }
   statements.push('COMMIT;');
 

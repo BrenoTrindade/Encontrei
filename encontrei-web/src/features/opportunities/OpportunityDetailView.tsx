@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { ApiError, getOpportunity } from '../../services/api';
 import type { OpportunityDetail } from '../../types/opportunity';
 import { formatOpportunityWindow, formatSourceUpdatedAt } from '../../utils/date';
+import { formatDistance } from '../../utils/distance';
 import {
   confidenceLabel,
   factorLabel,
@@ -126,7 +127,8 @@ export default function OpportunityDetailView({
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
           <WavesOutlinedIcon color="primary" aria-hidden="true" />
           <Typography variant="body2">
-            Estação de referência: <strong>{detail.tideStationName}</strong>
+            Estação de referência: <strong>{detail.tideStationName}</strong> — aproximadamente{' '}
+            {formatDistance(detail.tideStationDistanceKm)} da praia
           </Typography>
         </Stack>
       </Paper>

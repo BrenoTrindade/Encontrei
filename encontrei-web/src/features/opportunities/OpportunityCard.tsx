@@ -77,7 +77,7 @@ export default function OpportunityCard({
             <Stack direction="row" spacing={1} alignItems="center">
               <WavesOutlinedIcon fontSize="small" color="action" aria-hidden="true" />
               <Typography variant="body2" color="text.secondary">
-                Referência de maré: {opportunity.tideStationName}
+                Referência de maré: {opportunity.tideStationName} ({formatDistance(opportunity.tideStationDistanceKm)})
               </Typography>
             </Stack>
             {distanceKm !== undefined ? (

@@ -16,7 +16,7 @@ interface BeachConfiguration {
   id: string;
   name: string;
   municipality: string;
-  habitualCirculation: number;
+  habitualCirculation: number | null;
   restrictionStatus: RestrictionStatus;
   restrictionSummary: string;
 }
@@ -113,11 +113,14 @@ export function generateDailyOpportunity(
   const condition = nearestForecast(input.forecast.points, lowTide.forecastAtUtc);
   if (!condition) return null;
   const normalizedConditions = conditionsScore(condition);
+  const hasCirculationEstimate = input.beach.habitualCirculation !== null;
 
   const score = calculateOpportunity({
     circulation: {
-      normalizedValue: input.beach.habitualCirculation,
-      explanation: 'Estimativa inicial de circulação habitual; ainda não confirmada por evento.',
+      normalizedValue: input.beach.habitualCirculation ?? 0,
+      explanation: hasCirculationEstimate
+        ? 'Estimativa inicial de circulação habitual; ainda não confirmada por evento.'
+        : 'Circulação habitual ainda não cadastrada; fator mantido sem pontos.',
     },
     tide: {
       normalizedValue: 1,
@@ -136,14 +139,14 @@ export function generateDailyOpportunity(
     restrictionStatus: input.beach.restrictionStatus,
   });
   const confidence = assessOpportunityConfidence({
-    circulation: 'estimated_current',
+    circulation: hasCirculationEstimate ? 'estimated_current' : 'missing',
     tide: 'direct_current',
     conditions: 'direct_current',
   });
   const tideAt = Date.parse(lowTide.forecastAtUtc);
 
   return {
-    id: `opp-${input.beach.id}-${input.localDate}-${score.scoreVersion}`,
+    id: `opp-${input.beach.id}-${input.localDate}-${score.scoreVersion}-${input.generatedAtUtc.replace(/\D/g, '').slice(0, 14)}`,
     beachId: input.beach.id,
     localDate: input.localDate,
     recommendedStartUtc: new Date(tideAt - ONE_HOUR_MS).toISOString(),

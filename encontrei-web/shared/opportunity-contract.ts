@@ -26,6 +26,7 @@ export interface OpportunitySummary {
   restrictionStatus: RestrictionStatus;
   stale: boolean;
   tideStationName: string;
+  tideStationDistanceKm: number;
 }
 
 export interface BreakdownItem {

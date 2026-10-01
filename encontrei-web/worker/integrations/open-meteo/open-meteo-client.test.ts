@@ -53,7 +53,7 @@ describe('OpenMeteoClient', () => {
       requestedLatitude: -20.2839,
       retrievedAtUtc: '2026-09-30T12:00:00.000Z',
       freshUntilUtc: '2026-09-30T18:00:00.000Z',
-      usableUntilUtc: '2026-10-01T00:00:00.000Z',
+      usableUntilUtc: '2026-10-01T12:00:00.000Z',
     });
     expect(result[0]?.weatherGridLatitude).toBeCloseTo(-20.2739);
     expect(result[0]?.marineGridLatitude).toBeCloseTo(-20.2739);
