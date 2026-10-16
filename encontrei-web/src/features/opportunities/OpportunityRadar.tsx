@@ -19,6 +19,8 @@ import { getPilotDates } from '../../utils/date';
 import OpportunityCard from './OpportunityCard';
 import OpportunityDetailView from './OpportunityDetailView';
 import SavedOpportunities from './SavedOpportunities';
+import TelemetryPreference from './TelemetryPreference';
+import { trackParticipantEvent } from '../../services/telemetry';
 
 interface OpportunityRadarProps {
   onUnauthorized: () => void;
@@ -53,7 +55,9 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
 
     void getOpportunities(selectedDate)
       .then((response) => {
-        if (active) setOpportunities(response);
+        if (active) {
+          setOpportunities(response);
+        }
       })
       .catch((requestError: unknown) => {
         if (!active) return;
@@ -166,6 +170,7 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
         </Typography>
       </Box>
 
+      <TelemetryPreference localDate={selectedDate} />
       <Paper variant="outlined" sx={{ p: 1, mb: 2 }}>
         <ToggleButtonGroup
           value={dayIndex}
@@ -176,6 +181,7 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
               setOpportunities(null);
               setError(null);
               setDayIndex(value);
+              trackParticipantEvent({ name: 'day_changed', localDate: dates[value] });
             }
           }}
           aria-label="Dia do Radar"
@@ -200,7 +206,10 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
           value={viewMode}
           exclusive
           onChange={(_, value: ViewMode | null) => {
-            if (value) setViewMode(value);
+            if (value) {
+              setViewMode(value);
+              if (value === 'map') trackParticipantEvent({ name: 'map_opened', localDate: selectedDate });
+            }
           }}
           aria-label="Visualização do Radar"
           size="small"

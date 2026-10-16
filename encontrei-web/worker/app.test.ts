@@ -25,6 +25,7 @@ const opportunity = {
 
 function dependencies(): AppDependencies {
   return {
+    telemetry: { isEnabled: async () => false, setEnabled: async () => {}, record: async () => {} },
     invitations: {
       accept: async (token) => token === 'convite-valido'
         ? { participantCode: 'P-001', sessionToken: 'sessao-segura' }

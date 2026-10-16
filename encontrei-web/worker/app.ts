@@ -4,11 +4,14 @@ import type { InvitationRepository } from './domain/invitations/invitation';
 import type { OpportunityRepository } from './domain/opportunities/opportunity';
 import type { EngagementRepository } from './domain/engagement/engagement';
 import type { OpportunityFeedbackInput } from '../shared/engagement-contract';
+import type { TelemetryRepository } from './domain/telemetry/telemetry';
+import type { ParticipantEventInput } from '../shared/telemetry-contract';
 
 export interface AppDependencies {
   invitations: InvitationRepository;
   opportunities: OpportunityRepository;
   engagements: EngagementRepository;
+  telemetry: TelemetryRepository;
 }
 
 type Variables = {
@@ -66,6 +69,27 @@ function parseFeedback(value: unknown): OpportunityFeedbackInput | null {
     informationCorrect: candidate.informationCorrect,
     ...(trimmedComment ? { comment: trimmedComment } : {}),
   };
+}
+
+function parseParticipantEvent(value: unknown): ParticipantEventInput | null {
+  if (!value || typeof value !== 'object') return null;
+  const body = value as Record<string, unknown>;
+  if (Object.keys(body).some((key) => !['id', 'name', 'opportunityId', 'localDate'].includes(key))
+    || typeof body.id !== 'string'
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.id)) return null;
+  if (body.name === 'opportunity_viewed' || body.name === 'feedback_started') {
+    if (typeof body.opportunityId !== 'string' || body.opportunityId.length < 1
+      || body.opportunityId.length > 200 || body.localDate !== undefined) return null;
+    return { id: body.id, name: body.name, opportunityId: body.opportunityId };
+  }
+  if (body.name === 'radar_viewed' || body.name === 'day_changed' || body.name === 'map_opened') {
+    if (typeof body.localDate !== 'string' || !LOCAL_DATE.test(body.localDate)
+      || !Number.isFinite(Date.parse(`${body.localDate}T00:00:00.000Z`))
+      || new Date(`${body.localDate}T00:00:00.000Z`).toISOString().slice(0, 10) !== body.localDate
+      || body.opportunityId !== undefined) return null;
+    return { id: body.id, name: body.name, localDate: body.localDate };
+  }
+  return null;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -131,6 +155,37 @@ export function createApp(dependencies: AppDependencies) {
   app.use('/api/opportunities/*', requireParticipant);
   app.use('/api/saved-opportunities', requireParticipant);
   app.use('/api/saved-opportunities/*', requireParticipant);
+  app.use('/api/events', requireParticipant);
+  app.use('/api/telemetry/*', requireParticipant);
+
+  app.get('/api/telemetry/consent', async (context) => context.json({
+    enabled: await dependencies.telemetry.isEnabled(context.get('invitationId')),
+  }));
+
+  app.post('/api/telemetry/consent', async (context) => {
+    const body: unknown = await context.req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Object.keys(body).length !== 1
+      || !('enabled' in body) || typeof body.enabled !== 'boolean') {
+      return context.json({ error: 'Informe enabled como verdadeiro ou falso.' }, 400);
+    }
+    await dependencies.telemetry.setEnabled(context.get('invitationId'), body.enabled);
+    return context.body(null, 204);
+  });
+
+  app.post('/api/events', async (context) => {
+    const body: unknown = await context.req.json().catch(() => null);
+    const event = parseParticipantEvent(body);
+    if (!event) return context.json({ error: 'Evento inválido.' }, 400);
+    const invitationId = context.get('invitationId');
+    if (!await dependencies.telemetry.isEnabled(invitationId)) {
+      return context.json({ error: 'Medição opcional desativada.' }, 403);
+    }
+    if (event.opportunityId && !await dependencies.engagements.getState(invitationId, event.opportunityId)) {
+      return context.json({ error: 'Oportunidade não encontrada.' }, 404);
+    }
+    await dependencies.telemetry.record(invitationId, event);
+    return context.body(null, 204);
+  });
 
   app.get('/api/saved-opportunities', async (context) => context.json({
     opportunities: await dependencies.opportunities.listSaved(context.get('invitationId')),

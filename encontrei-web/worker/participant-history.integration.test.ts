@@ -6,6 +6,7 @@ import { D1EngagementRepository } from './repositories/d1-engagement-repository'
 import { D1InvitationRepository } from './repositories/d1-invitation-repository';
 import { D1OpportunityRepository } from './repositories/d1-opportunity-repository';
 import { sha256 } from './repositories/crypto';
+import { D1TelemetryRepository } from './repositories/d1-telemetry-repository';
 
 /** Executes real repository SQL; only the D1 transport is adapted to local SQLite. */
 function sqliteD1(sqlite: DatabaseSync): D1Database {
@@ -39,6 +40,7 @@ async function participantApp() {
     invitations: new D1InvitationRepository(database),
     opportunities: new D1OpportunityRepository(database, clock),
     engagements: new D1EngagementRepository(database, clock),
+    telemetry: new D1TelemetryRepository(database),
   });
   const accepted = await app.request('/api/invitations/accept', {
     method: 'POST', headers: { 'content-type': 'application/json' },
@@ -49,6 +51,32 @@ async function participantApp() {
 }
 
 describe('participant history with persisted SQLite data', () => {
+  it('requires opt-in before collecting minimal events and stops collection when disabled', async () => {
+    const { app, sqlite, cookie } = await participantApp();
+    const event = { id: '87955a0c-16b3-45c3-b174-f5dfd1f689e5', name: 'radar_viewed', localDate: '2026-07-16' };
+    const send = (body: unknown) => app.request('/api/events', {
+      method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify(body),
+    });
+    expect((await send(event)).status).toBe(403);
+    expect((await app.request('/api/telemetry/consent', {
+      method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ enabled: true }),
+    })).status).toBe(204);
+    expect((await send({ ...event, latitude: -20.3 })).status).toBe(400);
+    expect((await send({ ...event, name: 'arbitrary_event' })).status).toBe(400);
+    expect((await send({ ...event, localDate: '2026-02-30' })).status).toBe(400);
+    expect((await send({ id: crypto.randomUUID(), name: 'opportunity_viewed', opportunityId: 'missing' })).status).toBe(404);
+    expect((await app.request('/api/events', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(event),
+    })).status).toBe(401);
+    expect((await send(event)).status).toBe(204);
+    expect((await send(event)).status).toBe(204);
+    expect(sqlite.prepare('SELECT COUNT(*) AS count FROM participant_event').get()).toMatchObject({ count: 1 });
+    expect((await app.request('/api/telemetry/consent', {
+      method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ enabled: false }),
+    })).status).toBe(204);
+    expect((await send({ ...event, id: crypto.randomUUID() })).status).toBe(403);
+  });
+
   it('keeps a saved recommendation accessible for feedback after replacement and expiry', async () => {
     const { app, sqlite, cookie } = await participantApp();
     const id = 'opp-camburi-20260715';

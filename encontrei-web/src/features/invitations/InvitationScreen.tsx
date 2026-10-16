@@ -109,7 +109,8 @@ export default function InvitationScreen({ token, onAccepted }: InvitationScreen
               <Typography variant="body2" color="text.secondary">
                 O convite mantém uma sessão pseudônima. Se você salvar uma oportunidade, indicar
                 intenção de visita ou enviar feedback, essas respostas ficam ligadas somente ao
-                convite. Ainda não coletamos telemetria de navegação, localização ou contato.
+                convite. A medição de consultas é opcional e começa desativada; você pode permitir
+                ou desativar no Radar. Não coletamos localização ou contato.
               </Typography>
             </Box>
             <Alert severity="warning">

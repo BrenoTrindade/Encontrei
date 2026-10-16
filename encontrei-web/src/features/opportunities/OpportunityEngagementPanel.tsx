@@ -29,6 +29,7 @@ import type {
   OpportunityEngagementState,
   ResultCategory,
 } from '../../types/opportunity';
+import { trackParticipantEvent } from '../../services/telemetry';
 
 interface OpportunityEngagementPanelProps {
   opportunityId: string;
@@ -102,6 +103,7 @@ export default function OpportunityEngagementPanel({
   });
 
   const openFeedback = () => {
+    trackParticipantEvent({ name: 'feedback_started', opportunityId });
     const previous = state?.feedback;
     if (previous) {
       setWentToBeach(previous.wentToBeach ? 'yes' : 'no');

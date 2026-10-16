@@ -18,6 +18,7 @@ Implementado nesta fase:
 - indicação de confiança, validade, atribuição e limitações das fontes;
 - oportunidades salvas, intenção de visita e feedback ligados ao convite pseudônimo;
 - histórico privado com a versão originalmente salva e feedback após a visita, mesmo se a janela expirar;
+- medição opcional de consultas, com consentimento no Radar e sem localização ou rastreadores externos;
 - mapa complementar com Leaflet/OpenStreetMap.
 
 Ainda fora do escopo:

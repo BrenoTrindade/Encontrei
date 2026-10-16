@@ -26,6 +26,7 @@ import {
   scoreBandLabel,
 } from '../../utils/opportunityLabels';
 import OpportunityEngagementPanel from './OpportunityEngagementPanel';
+import { trackParticipantEvent } from '../../services/telemetry';
 
 interface OpportunityDetailViewProps {
   id: string;
@@ -49,7 +50,10 @@ export default function OpportunityDetailView({
 
     void (fromHistory ? getSavedOpportunity(id) : getOpportunity(id))
       .then((response) => {
-        if (active) setDetail(response);
+        if (active) {
+          setDetail(response);
+          trackParticipantEvent({ name: 'opportunity_viewed', opportunityId: response.id });
+        }
       })
       .catch((requestError: unknown) => {
         if (!active) return;
