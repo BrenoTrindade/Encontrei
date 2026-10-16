@@ -14,5 +14,20 @@
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "env": {
+    "staging": {
+      "name": "encontrei-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "encontrei-staging",
+          "database_id": "ba1d5a34-fb96-4984-be68-3a3eb7c93346",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
 }

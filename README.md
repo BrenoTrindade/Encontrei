@@ -111,15 +111,32 @@ ausência de uso: a medição é opcional. Feedbacks são contados por recomenda
 
 ## Cloudflare
 
-O `database_id` presente em `wrangler.jsonc` é intencionalmente um placeholder local. Antes de um deploy remoto:
+O bloco principal de `wrangler.jsonc` mantém o placeholder para desenvolvimento local. O ambiente
+`staging` usa o Worker e o banco D1 `encontrei-staging`, isolados do banco local.
 
-1. Criar o banco D1 real.
-2. Substituir o identificador no arquivo de configuração.
-3. Aplicar migrations no ambiente remoto.
-4. Criar convites remotos sem reutilizar o token de demonstração.
-5. Executar smoke tests antes de compartilhar qualquer link.
+Homologação: https://encontrei-staging.brenotrindadeprofessional.workers.dev
 
-Não versione credenciais ou tokens reais.
+```powershell
+cd encontrei-web
+npx wrangler d1 migrations apply encontrei-staging --remote --env staging
+npm run build:staging
+npx wrangler deploy --env staging --dry-run
+npm run deploy:staging
+```
+
+`npm run deploy` também direciona explicitamente para homologação. O build usa
+`CLOUDFLARE_ENV=staging` sem alterar o ambiente dos comandos locais. Para desenvolvimento,
+continue usando `npm run dev` e os comandos com sufixo `:local`.
+
+O `ADMIN_SECRET` remoto é independente do local, armazenado como secret do Worker. A cópia de
+operação fica em `.dev.vars.staging`, ignorada pelo Git. Após autorização do proprietário, o
+primeiro deploy pode configurar esse secret com `--secrets-file .dev.vars.staging`; os deploys
+seguintes preservam o secret existente. Nunca use `VITE_*` para segredos.
+
+O banco remoto recebeu somente migrations e um convite interno; não recebeu seed demonstrativo,
+tábuas, valores derivados do CHM ou registros de participantes locais. O Radar remoto permanece
+vazio até liberar as fontes e preparar a ingestão remota. As atualizações automáticas ainda não
+estão configuradas. Não versione credenciais ou tokens reais.
 
 ## Próximo gate de produto
 

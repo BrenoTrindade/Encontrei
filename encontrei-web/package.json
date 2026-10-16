@@ -13,7 +13,9 @@
     "db:migrate:local": "wrangler d1 migrations apply encontrei-pilot --local",
     "db:seed:local": "wrangler d1 execute encontrei-pilot --local --file=./scripts/seed-dev.sql",
     "data:refresh:real:local": "node --use-system-ca --import tsx ./scripts/refresh-real-data-local.ts --allow-local-chm",
-    "deploy": "vite build && wrangler deploy"
+    "build:staging": "node ./scripts/build-staging.mjs",
+    "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
+    "deploy": "npm run deploy:staging"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
