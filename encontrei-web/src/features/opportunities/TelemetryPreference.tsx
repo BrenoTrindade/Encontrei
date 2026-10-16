@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import { getTelemetryPreference, setTelemetryPreference, trackParticipantEvent } from '../../services/telemetry';
 
 export default function TelemetryPreference({ localDate }: { localDate: string }) {
+  const [openedDate] = useState(localDate);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -15,11 +16,11 @@ export default function TelemetryPreference({ localDate }: { localDate: string }
     void getTelemetryPreference().then((value) => {
       if (active) {
         setEnabled(value);
-        if (value) trackParticipantEvent({ name: 'radar_viewed', localDate });
+        if (value) trackParticipantEvent({ name: 'radar_viewed', localDate: openedDate });
       }
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [retry, localDate]);
+  }, [retry, openedDate]);
 
   const change = async () => {
     if (enabled === null) return;
