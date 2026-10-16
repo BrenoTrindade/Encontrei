@@ -34,6 +34,8 @@ function dependencies(): AppDependencies {
         : null,
     },
     opportunities: {
+      listSaved: async () => [],
+      findSavedById: async () => null,
       listByLocalDate: async (date) => date === '2026-07-16' ? [opportunity] : [],
       findPublishedById: async (id) => id === opportunity.id
         ? {

@@ -7,6 +7,7 @@ export type {
   OpportunitySummary,
   RestrictionStatus,
   ScoreBand,
+  SavedOpportunitySummary,
 } from '../../shared/opportunity-contract';
 
 export type {

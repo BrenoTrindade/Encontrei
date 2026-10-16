@@ -33,6 +33,7 @@ import type {
 interface OpportunityEngagementPanelProps {
   opportunityId: string;
   onUnauthorized: () => void;
+  historical?: boolean;
 }
 
 function isYes(value: string): boolean {
@@ -42,6 +43,7 @@ function isYes(value: string): boolean {
 export default function OpportunityEngagementPanel({
   opportunityId,
   onUnauthorized,
+  historical = false,
 }: OpportunityEngagementPanelProps) {
   const [state, setState] = useState<OpportunityEngagementState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +151,7 @@ export default function OpportunityEngagementPanel({
             <Button
               variant={state.saved ? 'outlined' : 'contained'}
               startIcon={state.saved ? <BookmarkRoundedIcon /> : <BookmarkBorderRoundedIcon />}
-              disabled={busy}
+              disabled={busy || (historical && !state.saved)}
               onClick={state.saved
                 ? handleRemove
                 : () => run(() => saveOpportunity(opportunityId, false))}
@@ -160,7 +162,7 @@ export default function OpportunityEngagementPanel({
               control={(
                 <Switch
                   checked={state.intentToGo === true}
-                  disabled={busy}
+                  disabled={busy || historical}
                   onChange={(event) => run(() => saveOpportunity(opportunityId, event.target.checked))}
                 />
               )}

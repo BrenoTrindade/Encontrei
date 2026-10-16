@@ -13,7 +13,7 @@ import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { ApiError, getOpportunity } from '../../services/api';
+import { ApiError, getOpportunity, getSavedOpportunity } from '../../services/api';
 import type { OpportunityDetail } from '../../types/opportunity';
 import { formatOpportunityWindow, formatSourceUpdatedAt } from '../../utils/date';
 import { formatDistance } from '../../utils/distance';
@@ -31,12 +31,14 @@ interface OpportunityDetailViewProps {
   id: string;
   onBack: () => void;
   onUnauthorized: () => void;
+  fromHistory?: boolean;
 }
 
 export default function OpportunityDetailView({
   id,
   onBack,
   onUnauthorized,
+  fromHistory = false,
 }: OpportunityDetailViewProps) {
   const [detail, setDetail] = useState<OpportunityDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function OpportunityDetailView({
   useEffect(() => {
     let active = true;
 
-    void getOpportunity(id)
+    void (fromHistory ? getSavedOpportunity(id) : getOpportunity(id))
       .then((response) => {
         if (active) setDetail(response);
       })
@@ -61,13 +63,13 @@ export default function OpportunityDetailView({
     return () => {
       active = false;
     };
-  }, [id, onUnauthorized, reloadCount]);
+  }, [id, fromHistory, onUnauthorized, reloadCount]);
 
   if (error) {
     return (
       <Box component="main" sx={{ maxWidth: 760, mx: 'auto', px: 2, pb: 5 }}>
         <Button startIcon={<ArrowBackRoundedIcon />} onClick={onBack} sx={{ mb: 2 }}>
-          Voltar ao Radar
+          {fromHistory ? 'Voltar aos salvos' : 'Voltar ao Radar'}
         </Button>
         <Alert
           severity="error"
@@ -94,7 +96,7 @@ export default function OpportunityDetailView({
   return (
     <Box component="main" sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, sm: 3 }, pb: 6 }}>
       <Button startIcon={<ArrowBackRoundedIcon />} onClick={onBack} sx={{ mb: 2 }}>
-        Voltar ao Radar
+        {fromHistory ? 'Voltar aos salvos' : 'Voltar ao Radar'}
       </Button>
 
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
@@ -103,7 +105,12 @@ export default function OpportunityDetailView({
         {detail.stale ? <Chip color="warning" label="Dados desatualizados" /> : null}
       </Stack>
 
-      {detail.stale ? (
+      {detail.historical ? (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Recomendação histórica, preservada para seu feedback. Esta janela foi substituída ou
+          expirou; consulte o Radar para planejar uma nova visita.
+        </Alert>
+      ) : detail.stale ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
           A atualização automática atrasou. Use esta janela apenas como referência e confira as
           fontes antes de se deslocar.
@@ -151,7 +158,8 @@ export default function OpportunityDetailView({
         </Typography>
       </Alert>
 
-      <OpportunityEngagementPanel opportunityId={detail.id} onUnauthorized={onUnauthorized} />
+      <OpportunityEngagementPanel key={detail.id} opportunityId={detail.id}
+        historical={detail.historical} onUnauthorized={onUnauthorized} />
 
       <Typography variant="h5" component="h2" gutterBottom>
         Confiança dos dados

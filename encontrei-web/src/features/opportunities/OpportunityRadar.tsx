@@ -18,6 +18,7 @@ import { distanceInKm, type Coordinates } from '../../utils/distance';
 import { getPilotDates } from '../../utils/date';
 import OpportunityCard from './OpportunityCard';
 import OpportunityDetailView from './OpportunityDetailView';
+import SavedOpportunities from './SavedOpportunities';
 
 interface OpportunityRadarProps {
   onUnauthorized: () => void;
@@ -42,6 +43,7 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
 
   const selectedDate = dates[dayIndex];
 
@@ -133,11 +135,17 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
     );
   };
 
+  if (showSaved) return <SavedOpportunities onBack={() => setShowSaved(false)} onUnauthorized={onUnauthorized} />;
+
   if (selectedOpportunityId) {
     return (
       <OpportunityDetailView
         id={selectedOpportunityId}
-        onBack={() => setSelectedOpportunityId(null)}
+        onBack={() => {
+          setSelectedOpportunityId(null);
+          setOpportunities(null);
+          setReloadCount((value) => value + 1);
+        }}
         onUnauthorized={onUnauthorized}
       />
     );
@@ -146,6 +154,9 @@ export default function OpportunityRadar({ onUnauthorized }: OpportunityRadarPro
   return (
     <Box component="main" sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, sm: 3 }, pb: 6 }}>
       <Box sx={{ mb: 3 }}>
+        <Button variant="outlined" onClick={() => setShowSaved(true)} sx={{ mb: 2 }}>
+          Salvos e feedback
+        </Button>
         <Typography variant="h3" component="h1" gutterBottom>
           Radar de oportunidades
         </Typography>

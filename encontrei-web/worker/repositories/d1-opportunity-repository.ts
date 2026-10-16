@@ -11,6 +11,7 @@ import type {
 import type {
   BreakdownItem,
   OpportunitySource,
+  SavedOpportunitySummary,
 } from '../../shared/opportunity-contract';
 import { distanceInKm } from '../../shared/geography';
 import { degradeConfidenceWhenStale } from '../domain/opportunity-score/opportunity-score';
@@ -37,9 +38,10 @@ interface OpportunityRow {
   restriction_summary: string;
   stale_at: string | null;
   expires_at: string;
+  status: string;
 }
 
-const SELECT_PUBLISHED = `
+const SELECT_SNAPSHOT = `
   SELECT
     opportunity_snapshot.id,
     beach.id AS beach_id,
@@ -61,10 +63,14 @@ const SELECT_PUBLISHED = `
     opportunity_snapshot.sources_json,
     opportunity_snapshot.restriction_summary,
     opportunity_snapshot.stale_at,
-    opportunity_snapshot.expires_at
+    opportunity_snapshot.expires_at,
+    opportunity_snapshot.status
   FROM opportunity_snapshot
   INNER JOIN beach ON beach.id = opportunity_snapshot.beach_id
   INNER JOIN tide_station ON tide_station.id = beach.tide_station_id
+`;
+
+const SELECT_PUBLISHED = `${SELECT_SNAPSHOT}
   WHERE opportunity_snapshot.status = 'published'
     AND opportunity_snapshot.restriction_status <> 'not_recommended'
 `;
@@ -177,6 +183,62 @@ export class D1OpportunityRepository implements OpportunityRepository {
     private readonly database: D1Database,
     private readonly clock: () => Date = () => new Date(),
   ) {}
+
+  async listSaved(invitationId: string): Promise<SavedOpportunitySummary[]> {
+    const rows = await this.database.prepare(`${SELECT_SNAPSHOT}
+      WHERE EXISTS (
+        SELECT 1 FROM saved_opportunity s
+        WHERE s.opportunity_id = opportunity_snapshot.id AND s.invitation_id = ?1
+      ) OR EXISTS (
+        SELECT 1 FROM feedback f
+        WHERE f.opportunity_id = opportunity_snapshot.id AND f.invitation_id = ?1
+      )
+      ORDER BY opportunity_snapshot.recommended_start_utc DESC, opportunity_snapshot.id DESC
+    `).bind(invitationId).all<OpportunityRow>();
+    const now = this.clock();
+    const engagements = await this.database.prepare(`
+      SELECT opportunity_id, 1 AS saved, intent_to_go, 0 AS feedback_submitted
+      FROM saved_opportunity WHERE invitation_id = ?1
+      UNION ALL
+      SELECT opportunity_id, 0 AS saved, NULL AS intent_to_go, 1 AS feedback_submitted
+      FROM feedback WHERE invitation_id = ?1
+    `).bind(invitationId).all<{
+      opportunity_id: string; saved: number; intent_to_go: number | null; feedback_submitted: number;
+    }>();
+    const byOpportunity = new Map<string, { saved: boolean; intentToGo: boolean | null; feedbackSubmitted: boolean }>();
+    for (const row of engagements.results) {
+      const state = byOpportunity.get(row.opportunity_id)
+        ?? { saved: false, intentToGo: null, feedbackSubmitted: false };
+      if (row.saved === 1) { state.saved = true; state.intentToGo = row.intent_to_go === 1; }
+      if (row.feedback_submitted === 1) state.feedbackSubmitted = true;
+      byOpportunity.set(row.opportunity_id, state);
+    }
+    return rows.results.map((row) => ({
+      ...toSummary(row, now),
+      historical: row.status !== 'published' || Date.parse(row.expires_at) <= now.getTime(),
+      ...byOpportunity.get(row.id)!,
+    }));
+  }
+
+  async findSavedById(invitationId: string, id: string): Promise<OpportunityDetail | null> {
+    const row = await this.database.prepare(`${SELECT_SNAPSHOT}
+      WHERE opportunity_snapshot.id = ?2 AND (
+        EXISTS (SELECT 1 FROM saved_opportunity s
+          WHERE s.opportunity_id = opportunity_snapshot.id AND s.invitation_id = ?1)
+        OR EXISTS (SELECT 1 FROM feedback f
+          WHERE f.opportunity_id = opportunity_snapshot.id AND f.invitation_id = ?1)
+      )
+    `).bind(invitationId, id).first<OpportunityRow>();
+    if (!row) return null;
+    const now = this.clock();
+    return {
+      ...toSummary(row, now),
+      historical: row.status !== 'published' || Date.parse(row.expires_at) <= now.getTime(),
+      breakdown: parseOpportunityBreakdown(row.breakdown_json),
+      sources: parseOpportunitySources(row.sources_json),
+      restrictionSummary: row.restriction_summary,
+    };
+  }
 
   async listByLocalDate(date: string): Promise<OpportunitySummary[]> {
     const result = await this.database

@@ -48,7 +48,15 @@ export interface OpportunitySource {
 }
 
 export interface OpportunityDetail extends OpportunitySummary {
+  historical?: boolean;
   breakdown: BreakdownItem[];
   sources: OpportunitySource[];
   restrictionSummary: string;
+}
+
+export interface SavedOpportunitySummary extends OpportunitySummary {
+  historical: boolean;
+  saved: boolean;
+  intentToGo: boolean | null;
+  feedbackSubmitted: boolean;
 }

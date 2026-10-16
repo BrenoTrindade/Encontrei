@@ -129,6 +129,20 @@ export function createApp(dependencies: AppDependencies) {
 
   app.use('/api/opportunities', requireParticipant);
   app.use('/api/opportunities/*', requireParticipant);
+  app.use('/api/saved-opportunities', requireParticipant);
+  app.use('/api/saved-opportunities/*', requireParticipant);
+
+  app.get('/api/saved-opportunities', async (context) => context.json({
+    opportunities: await dependencies.opportunities.listSaved(context.get('invitationId')),
+  }));
+
+  app.get('/api/saved-opportunities/:id', async (context) => {
+    const opportunity = await dependencies.opportunities.findSavedById(
+      context.get('invitationId'), context.req.param('id'),
+    );
+    if (!opportunity) return context.json({ error: 'Oportunidade não encontrada no seu histórico.' }, 404);
+    return context.json(opportunity);
+  });
 
   app.get('/api/opportunities', async (context) => {
     const date = context.req.query('date') ?? '';

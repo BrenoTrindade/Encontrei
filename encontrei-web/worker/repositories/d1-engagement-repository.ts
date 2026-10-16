@@ -22,18 +22,6 @@ export class D1EngagementRepository implements EngagementRepository {
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
-  private async opportunityIsAvailable(opportunityId: string): Promise<boolean> {
-    const row = await this.database
-      .prepare(`
-        SELECT 1 AS available
-        FROM opportunity_snapshot
-        WHERE id = ?1 AND status = 'published' AND expires_at > ?2
-      `)
-      .bind(opportunityId, this.clock().toISOString())
-      .first<{ available: number }>();
-    return row?.available === 1;
-  }
-
   async getState(
     invitationId: string,
     opportunityId: string,
@@ -58,8 +46,13 @@ export class D1EngagementRepository implements EngagementRepository {
           ON feedback.opportunity_id = opportunity_snapshot.id
           AND feedback.invitation_id = ?1
         WHERE opportunity_snapshot.id = ?2
-          AND opportunity_snapshot.status = 'published'
-          AND opportunity_snapshot.expires_at > ?3
+          AND (
+            (opportunity_snapshot.status = 'published'
+              AND opportunity_snapshot.restriction_status <> 'not_recommended'
+              AND opportunity_snapshot.expires_at > ?3)
+            OR saved_opportunity.invitation_id IS NOT NULL
+            OR feedback.invitation_id IS NOT NULL
+          )
       `)
       .bind(invitationId, opportunityId, this.clock().toISOString())
       .first<EngagementRow>();
@@ -94,22 +87,24 @@ export class D1EngagementRepository implements EngagementRepository {
     intentToGo: boolean,
   ): Promise<OpportunityEngagementState | null> {
     const now = this.clock().toISOString();
-    await this.database
+    const result = await this.database
       .prepare(`
         INSERT INTO saved_opportunity (invitation_id, opportunity_id, saved_at, intent_to_go)
         SELECT ?1, id, ?2, ?3
         FROM opportunity_snapshot
         WHERE id = ?4 AND status = 'published' AND expires_at > ?2
+          AND restriction_status <> 'not_recommended'
         ON CONFLICT(invitation_id, opportunity_id) DO UPDATE SET
           intent_to_go = excluded.intent_to_go
       `)
       .bind(invitationId, now, intentToGo ? 1 : 0, opportunityId)
       .run();
+    if (result.meta.changes === 0) return null;
     return this.getState(invitationId, opportunityId);
   }
 
   async remove(invitationId: string, opportunityId: string): Promise<boolean> {
-    if (!await this.opportunityIsAvailable(opportunityId)) return false;
+    if (!await this.getState(invitationId, opportunityId)) return false;
     await this.database
       .prepare('DELETE FROM saved_opportunity WHERE invitation_id = ?1 AND opportunity_id = ?2')
       .bind(invitationId, opportunityId)
@@ -122,7 +117,7 @@ export class D1EngagementRepository implements EngagementRepository {
     opportunityId: string,
     feedback: OpportunityFeedbackInput,
   ): Promise<boolean> {
-    if (!await this.opportunityIsAvailable(opportunityId)) return false;
+    if (!await this.getState(invitationId, opportunityId)) return false;
     const submittedAt = this.clock().toISOString();
     await this.database
       .prepare(`

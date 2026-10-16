@@ -3,6 +3,7 @@ import type {
   OpportunityEngagementState,
   OpportunityFeedbackInput,
   OpportunitySummary,
+  SavedOpportunitySummary,
 } from '../types/opportunity';
 
 export class ApiError extends Error {
@@ -62,6 +63,15 @@ export function getOpportunities(date: string): Promise<OpportunitySummary[]> {
 
 export function getOpportunity(id: string): Promise<OpportunityDetail> {
   return request(`/api/opportunities/${encodeURIComponent(id)}`);
+}
+
+export function getSavedOpportunities(): Promise<SavedOpportunitySummary[]> {
+  return request<{ opportunities: SavedOpportunitySummary[] }>('/api/saved-opportunities')
+    .then((response) => response.opportunities);
+}
+
+export function getSavedOpportunity(id: string): Promise<OpportunityDetail> {
+  return request(`/api/saved-opportunities/${encodeURIComponent(id)}`);
 }
 
 export function getOpportunityEngagement(id: string): Promise<OpportunityEngagementState> {
