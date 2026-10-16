@@ -90,8 +90,27 @@ export default function OpportunityEngagementPanel({
 
   const handleRemove = () => run(async () => {
     await removeSavedOpportunity(opportunityId);
-    setState({ saved: false, intentToGo: null, savedAt: null, feedbackSubmitted: state?.feedbackSubmitted ?? false });
+    setState({
+      saved: false,
+      intentToGo: null,
+      savedAt: null,
+      feedbackSubmitted: state?.feedbackSubmitted ?? false,
+      feedback: state?.feedback ?? null,
+    });
   });
+
+  const openFeedback = () => {
+    const previous = state?.feedback;
+    if (previous) {
+      setWentToBeach(previous.wentToBeach ? 'yes' : 'no');
+      setFollowedWindow(previous.followedWindow ? 'yes' : 'no');
+      setDecisionEffect(previous.decisionEffect);
+      setResultCategory(previous.resultCategory);
+      setInformationCorrect(previous.informationCorrect ? 'yes' : 'no');
+      setComment(previous.comment ?? '');
+    }
+    setShowFeedback(true);
+  };
 
   const feedbackComplete = wentToBeach !== ''
     && decisionEffect !== ''
@@ -101,15 +120,18 @@ export default function OpportunityEngagementPanel({
   const handleFeedback = () => run(async () => {
     if (!feedbackComplete || !decisionEffect) return;
     const went = isYes(wentToBeach);
-    await submitOpportunityFeedback(opportunityId, {
+    const feedback = {
       wentToBeach: went,
       followedWindow: went && isYes(followedWindow),
       decisionEffect,
       resultCategory: went ? resultCategory as ResultCategory : 'not_applicable',
       informationCorrect: isYes(informationCorrect),
       ...(comment.trim() ? { comment: comment.trim() } : {}),
-    });
-    setState((current) => current ? { ...current, feedbackSubmitted: true } : current);
+    };
+    await submitOpportunityFeedback(opportunityId, feedback);
+    setState((current) => current
+      ? { ...current, feedbackSubmitted: true, feedback }
+      : current);
     setShowFeedback(false);
   });
 
@@ -157,14 +179,14 @@ export default function OpportunityEngagementPanel({
       {state?.feedbackSubmitted && !showFeedback ? (
         <Alert
           severity="success"
-          action={<Button color="inherit" onClick={() => setShowFeedback(true)}>Atualizar</Button>}
+          action={<Button color="inherit" onClick={openFeedback}>Atualizar</Button>}
         >
           Feedback enviado. Obrigado por ajudar a avaliar o Radar.
         </Alert>
       ) : null}
 
       {state && !state.feedbackSubmitted && !showFeedback ? (
-        <Button variant="text" onClick={() => setShowFeedback(true)}>
+        <Button variant="text" onClick={openFeedback}>
           Enviar feedback desta oportunidade
         </Button>
       ) : null}

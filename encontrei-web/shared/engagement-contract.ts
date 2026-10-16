@@ -6,6 +6,7 @@ export interface OpportunityEngagementState {
   intentToGo: boolean | null;
   savedAt: string | null;
   feedbackSubmitted: boolean;
+  feedback: OpportunityFeedbackInput | null;
 }
 
 export interface OpportunityFeedbackInput {

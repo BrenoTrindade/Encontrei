@@ -56,7 +56,7 @@ function dependencies(): AppDependencies {
     },
     engagements: {
       getState: async (_invitationId, opportunityId) => opportunityId === opportunity.id
-        ? { saved: false, intentToGo: null, savedAt: null, feedbackSubmitted: false }
+        ? { saved: false, intentToGo: null, savedAt: null, feedbackSubmitted: false, feedback: null }
         : null,
       save: async (_invitationId, opportunityId, intentToGo) => opportunityId === opportunity.id
         ? {
@@ -64,6 +64,7 @@ function dependencies(): AppDependencies {
             intentToGo,
             savedAt: '2026-07-16T12:00:00.000Z',
             feedbackSubmitted: false,
+            feedback: null,
           }
         : null,
       remove: async (_invitationId, opportunityId) => opportunityId === opportunity.id,
@@ -164,6 +165,7 @@ describe('participant API', () => {
       intentToGo: true,
       savedAt: '2026-07-16T12:00:00.000Z',
       feedbackSubmitted: false,
+      feedback: null,
     });
   });
 
@@ -198,6 +200,7 @@ describe('participant API', () => {
       intentToGo: null,
       savedAt: null,
       feedbackSubmitted: false,
+      feedback: null,
     });
   });
 
