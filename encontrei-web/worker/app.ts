@@ -6,12 +6,15 @@ import type { EngagementRepository } from './domain/engagement/engagement';
 import type { OpportunityFeedbackInput } from '../shared/engagement-contract';
 import type { TelemetryRepository } from './domain/telemetry/telemetry';
 import type { ParticipantEventInput } from '../shared/telemetry-contract';
+import type { AdminService } from './admin/admin-service';
+import { createAdminApp } from './admin/admin-app';
 
 export interface AppDependencies {
   invitations: InvitationRepository;
   opportunities: OpportunityRepository;
   engagements: EngagementRepository;
   telemetry: TelemetryRepository;
+  admin?: AdminService;
 }
 
 type Variables = {
@@ -94,6 +97,7 @@ function parseParticipantEvent(value: unknown): ParticipantEventInput | null {
 
 export function createApp(dependencies: AppDependencies) {
   const app = new Hono<{ Variables: Variables }>();
+  app.route('/api/admin', createAdminApp(dependencies.admin));
 
   app.get('/api/health', (context) => context.json({ status: 'ok' }));
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined';
 import Box from '@mui/material/Box';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -7,10 +7,12 @@ import Typography from '@mui/material/Typography';
 import InvitationScreen from './features/invitations/InvitationScreen';
 import OpportunityRadar from './features/opportunities/OpportunityRadar';
 import theme from './theme';
+const AdminDashboard = lazy(() => import('./features/admin/AdminDashboard'));
 
 type AccessState = 'invitation' | 'radar' | 'missing-invitation';
 
 function App() {
+  const isAdmin = window.location.pathname.replace(/\/$/, '') === '/admin';
   const invitationToken = useMemo(
     () => new URLSearchParams(window.location.search).get('invite'),
     [],
@@ -63,15 +65,16 @@ function App() {
           </Typography>
         </Box>
 
-        {accessState === 'invitation' && invitationToken ? (
+        {isAdmin ? <Suspense fallback={<Typography sx={{ p: 3 }}>Carregando administração…</Typography>}><AdminDashboard /></Suspense> : null}
+        {!isAdmin && accessState === 'invitation' && invitationToken ? (
           <InvitationScreen token={invitationToken} onAccepted={handleAccepted} />
         ) : null}
 
-        {accessState === 'radar' ? (
+        {!isAdmin && accessState === 'radar' ? (
           <OpportunityRadar onUnauthorized={handleUnauthorized} />
         ) : null}
 
-        {accessState === 'missing-invitation' ? (
+        {!isAdmin && accessState === 'missing-invitation' ? (
           <InvitationScreen token={null} onAccepted={handleAccepted} />
         ) : null}
       </Box>

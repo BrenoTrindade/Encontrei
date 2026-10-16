@@ -1,5 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createApp } from './app';
 import { D1EngagementRepository } from './repositories/d1-engagement-repository';
@@ -7,34 +6,14 @@ import { D1InvitationRepository } from './repositories/d1-invitation-repository'
 import { D1OpportunityRepository } from './repositories/d1-opportunity-repository';
 import { sha256 } from './repositories/crypto';
 import { D1TelemetryRepository } from './repositories/d1-telemetry-repository';
-
-/** Executes real repository SQL; only the D1 transport is adapted to local SQLite. */
-function sqliteD1(sqlite: DatabaseSync): D1Database {
-  function prepare(sql: string, values: SQLInputValue[] = []) {
-    const statement = sqlite.prepare(sql);
-    return {
-      bind: (...parameters: SQLInputValue[]) => prepare(sql, parameters),
-      first: async () => statement.get(...values) ?? null,
-      all: async () => ({ results: statement.all(...values), success: true }),
-      run: async () => ({ success: true, meta: statement.run(...values) }),
-    };
-  }
-  return { prepare } as unknown as D1Database;
-}
+import { createTestDatabase } from './testing/database';
 
 const databases: DatabaseSync[] = [];
 afterEach(() => { for (const database of databases.splice(0)) database.close(); });
 
 async function participantApp() {
-  const sqlite = new DatabaseSync(':memory:');
+  const { sqlite, database } = createTestDatabase();
   databases.push(sqlite);
-  for (const file of readdirSync('migrations').filter((name) => name.endsWith('.sql')).sort()) {
-    sqlite.exec(readFileSync(`migrations/${file}`, 'utf8'));
-  }
-  sqlite.exec(readFileSync('scripts/seed-dev.sql', 'utf8'));
-  // The development seed predates normalized breakdowns; fixtures use the current contract.
-  sqlite.exec(`UPDATE opportunity_snapshot SET breakdown_json = '[{"factor":"tide","normalizedValue":0.8,"contribution":24,"maxContribution":30,"explanation":"Maré prevista."}]';`);
-  const database = sqliteD1(sqlite);
   const clock = () => new Date('2026-07-16T12:00:00.000Z');
   const app = createApp({
     invitations: new D1InvitationRepository(database),

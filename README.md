@@ -19,6 +19,7 @@ Implementado nesta fase:
 - oportunidades salvas, intenção de visita e feedback ligados ao convite pseudônimo;
 - histórico privado com a versão originalmente salva e feedback após a visita, mesmo se a janela expirar;
 - medição opcional de consultas, com consentimento no Radar e sem localização ou rastreadores externos;
+- painel administrativo com métricas semanais, exportação CSV/JSON e exclusão dos dados de um convite;
 - mapa complementar com Leaflet/OpenStreetMap.
 
 Ainda fora do escopo:
@@ -87,6 +88,26 @@ npm test
 npm run lint
 npm run build
 ```
+
+## Administração local
+
+Abra `/admin` no mesmo endereço do Vite. Configure `ADMIN_SECRET` no arquivo local
+`encontrei-web/.dev.vars`, com um segredo aleatório de pelo menos 32 caracteres, e reinicie o Vite.
+Esse arquivo fica fora do Git. Em ambiente remoto, use um secret do Worker, nunca uma variável
+`VITE_*`. A administração permanece desabilitada sem essa configuração.
+
+O login tem limite de dez tentativas por janela de 15 minutos e sessão de uma hora. Sair ou trocar
+o segredo invalida a sessão. O CSV traz métricas por participante e o JSON traz os registros do
+piloto; nenhum export inclui credenciais. Esses arquivos podem conter comentários enviados pelos
+participantes e devem ficar apenas com o operador.
+
+A exclusão exige digitar o código do convite e remove convite, sessão do participante, eventos,
+salvos e feedbacks. O registro de auditoria guarda apenas que houve exclusão e quando, sem reter
+o identificador apagado. Arquivos exportados anteriormente precisam ser tratados separadamente.
+
+Atividade semanal considera eventos permitidos e ações persistidas (salvos e feedback), em
+semanas iniciadas na segunda-feira no horário do ES. Não interprete ausência de registros como
+ausência de uso: a medição é opcional. Feedbacks são contados por recomendação, não por pessoa.
 
 ## Cloudflare
 

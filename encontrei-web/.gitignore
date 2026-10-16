@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .wrangler
+.dev.vars*
 *.tsbuildinfo
 
 # Editor directories and files

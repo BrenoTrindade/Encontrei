@@ -77,6 +77,14 @@ function dependencies(): AppDependencies {
 }
 
 describe('participant API', () => {
+  it('keeps administration disabled when no administrator secret is configured', async () => {
+    const response = await createApp(dependencies()).request('/api/admin/pilot-summary', {
+      headers: { cookie: 'encontrei_session=sessao-segura' },
+    });
+    expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
   it('exchanges a valid invitation for a secure session cookie', async () => {
     const response = await createApp(dependencies()).request('https://encontrei.example/api/invitations/accept', {
       method: 'POST',
