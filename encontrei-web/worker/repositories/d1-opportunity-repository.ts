@@ -145,11 +145,18 @@ export function parseOpportunitySources(value: string): OpportunitySource[] {
   return parsed as OpportunitySource[];
 }
 
-function toSummary(row: OpportunityRow, now: Date): OpportunitySummary {
+function isHistorical(row: OpportunityRow, now: Date): boolean {
+  return row.status !== 'published'
+    || row.restriction_status === 'not_recommended'
+    || Date.parse(row.expires_at) <= now.getTime();
+}
+
+function toSummary(row: OpportunityRow, now: Date, historical = false): OpportunitySummary {
   const stale = row.stale_at !== null && Date.parse(row.stale_at) <= now.getTime();
-  const confidence = degradeConfidenceWhenStale(
+  const originalReasons = parseStringArray(row.confidence_reasons_json, 'confidence_reasons_json');
+  const confidence = historical ? { level: row.confidence, reasons: originalReasons } : degradeConfidenceWhenStale(
     row.confidence,
-    parseStringArray(row.confidence_reasons_json, 'confidence_reasons_json'),
+    originalReasons,
     stale,
   );
   return {
@@ -175,6 +182,16 @@ function toSummary(row: OpportunityRow, now: Date): OpportunitySummary {
       { latitude: row.latitude, longitude: row.longitude },
       { latitude: row.tide_station_latitude, longitude: row.tide_station_longitude },
     ),
+  };
+}
+
+function toDetail(row: OpportunityRow, now: Date, historical = false): OpportunityDetail {
+  return {
+    ...toSummary(row, now, historical),
+    historical,
+    breakdown: parseOpportunityBreakdown(row.breakdown_json),
+    sources: parseOpportunitySources(row.sources_json),
+    restrictionSummary: row.restriction_summary,
   };
 }
 
@@ -213,11 +230,14 @@ export class D1OpportunityRepository implements OpportunityRepository {
       if (row.feedback_submitted === 1) state.feedbackSubmitted = true;
       byOpportunity.set(row.opportunity_id, state);
     }
-    return rows.results.map((row) => ({
-      ...toSummary(row, now),
-      historical: row.status !== 'published' || Date.parse(row.expires_at) <= now.getTime(),
-      ...byOpportunity.get(row.id)!,
-    }));
+    return rows.results.map((row) => {
+      const historical = isHistorical(row, now);
+      return {
+        ...toSummary(row, now, historical),
+        historical,
+        ...byOpportunity.get(row.id)!,
+      };
+    });
   }
 
   async findSavedById(invitationId: string, id: string): Promise<OpportunityDetail | null> {
@@ -231,13 +251,7 @@ export class D1OpportunityRepository implements OpportunityRepository {
     `).bind(invitationId, id).first<OpportunityRow>();
     if (!row) return null;
     const now = this.clock();
-    return {
-      ...toSummary(row, now),
-      historical: row.status !== 'published' || Date.parse(row.expires_at) <= now.getTime(),
-      breakdown: parseOpportunityBreakdown(row.breakdown_json),
-      sources: parseOpportunitySources(row.sources_json),
-      restrictionSummary: row.restriction_summary,
-    };
+    return toDetail(row, now, isHistorical(row, now));
   }
 
   async listByLocalDate(date: string): Promise<OpportunitySummary[]> {
@@ -271,11 +285,6 @@ export class D1OpportunityRepository implements OpportunityRepository {
 
     if (!row) return null;
 
-    return {
-      ...toSummary(row, this.clock()),
-      breakdown: parseOpportunityBreakdown(row.breakdown_json),
-      sources: parseOpportunitySources(row.sources_json),
-      restrictionSummary: row.restriction_summary,
-    };
+    return toDetail(row, this.clock());
   }
 }

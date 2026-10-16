@@ -58,13 +58,13 @@ describe('participant history with persisted SQLite data', () => {
     });
     expect(saved.status).toBe(200);
     // A later refresh replaces this recommendation; its original content must remain reviewable.
-    sqlite.exec(`UPDATE opportunity_snapshot SET status='hidden', expires_at='2026-07-16T11:00:00.000Z' WHERE id='${id}';`);
+    sqlite.exec(`UPDATE opportunity_snapshot SET status='hidden', stale_at='2026-07-16T10:00:00.000Z', expires_at='2026-07-16T11:00:00.000Z' WHERE id='${id}';`);
     const history = await app.request('/api/saved-opportunities', { headers: { cookie } });
     expect(history.status).toBe(200);
     expect(await history.json()).toMatchObject({ opportunities: [{ id, historical: true, intentToGo: true }] });
     const detail = await app.request(`/api/saved-opportunities/${id}`, { headers: { cookie } });
     expect(detail.status).toBe(200);
-    expect(await detail.json()).toMatchObject({ id, historical: true });
+    expect(await detail.json()).toMatchObject({ id, historical: true, confidence: 'medium' });
     const feedback = {
       wentToBeach: true, followedWindow: true, decisionEffect: 'confirmed',
       resultCategory: 'nothing', informationCorrect: true, comment: 'Retorno após a visita.',
