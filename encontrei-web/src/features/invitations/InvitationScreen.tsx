@@ -107,9 +107,9 @@ export default function InvitationScreen({ token, onAccepted }: InvitationScreen
             <Box>
               <Typography fontWeight={700}>Dados do piloto</Typography>
               <Typography variant="body2" color="text.secondary">
-                Nesta primeira versão, o convite mantém apenas uma sessão pseudônima. A coleta de
-                aberturas, oportunidades consultadas e feedback só será ativada quando a telemetria
-                e a política do piloto estiverem prontas. Não armazenamos sua localização.
+                O convite mantém uma sessão pseudônima. Se você salvar uma oportunidade, indicar
+                intenção de visita ou enviar feedback, essas respostas ficam ligadas somente ao
+                convite. Ainda não coletamos telemetria de navegação, localização ou contato.
               </Typography>
             </Box>
             <Alert severity="warning">

@@ -30,7 +30,7 @@ function dependencies(): AppDependencies {
         ? { participantCode: 'P-001', sessionToken: 'sessao-segura' }
         : null,
       findParticipantBySession: async (session) => session === 'sessao-segura'
-        ? { participantCode: 'P-001' }
+        ? { invitationId: 'invite-001', participantCode: 'P-001' }
         : null,
     },
     opportunities: {
@@ -53,6 +53,21 @@ function dependencies(): AppDependencies {
             restrictionSummary: 'Verifique as regras locais antes da busca.',
           }
         : null,
+    },
+    engagements: {
+      getState: async (_invitationId, opportunityId) => opportunityId === opportunity.id
+        ? { saved: false, intentToGo: null, savedAt: null, feedbackSubmitted: false }
+        : null,
+      save: async (_invitationId, opportunityId, intentToGo) => opportunityId === opportunity.id
+        ? {
+            saved: true,
+            intentToGo,
+            savedAt: '2026-07-16T12:00:00.000Z',
+            feedbackSubmitted: false,
+          }
+        : null,
+      remove: async (_invitationId, opportunityId) => opportunityId === opportunity.id,
+      submitFeedback: async (_invitationId, opportunityId) => opportunityId === opportunity.id,
     },
   };
 }
@@ -128,5 +143,121 @@ describe('participant API', () => {
       id: opportunity.id,
       breakdown: [{ factor: 'tide', contribution: 30 }],
     });
+  });
+
+  it('saves an opportunity with an explicit intent to go', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/save`,
+      {
+        method: 'POST',
+        headers: {
+          cookie: 'encontrei_session=sessao-segura',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ intentToGo: true }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      saved: true,
+      intentToGo: true,
+      savedAt: '2026-07-16T12:00:00.000Z',
+      feedbackSubmitted: false,
+    });
+  });
+
+  it('rejects unexpected save fields so personal data is not collected accidentally', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/save`,
+      {
+        method: 'POST',
+        headers: {
+          cookie: 'encontrei_session=sessao-segura',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          intentToGo: true,
+          coordinates: '-20.3155,-40.3128',
+        }),
+      },
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('returns the participant engagement state for an opportunity', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/engagement`,
+      { headers: { cookie: 'encontrei_session=sessao-segura' } },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      saved: false,
+      intentToGo: null,
+      savedAt: null,
+      feedbackSubmitted: false,
+    });
+  });
+
+  it('removes a saved opportunity without exposing participant identifiers', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/save`,
+      {
+        method: 'DELETE',
+        headers: { cookie: 'encontrei_session=sessao-segura' },
+      },
+    );
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
+  });
+
+  it('accepts structured feedback linked to the pseudonymous invitation', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/feedback`,
+      {
+        method: 'POST',
+        headers: {
+          cookie: 'encontrei_session=sessao-segura',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          wentToBeach: true,
+          followedWindow: true,
+          decisionEffect: 'confirmed',
+          resultCategory: 'nothing',
+          informationCorrect: true,
+          comment: 'A janela pareceu correta.',
+        }),
+      },
+    );
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
+  });
+
+  it('rejects unexpected feedback fields so personal data is not collected accidentally', async () => {
+    const response = await createApp(dependencies()).request(
+      `/api/opportunities/${opportunity.id}/feedback`,
+      {
+        method: 'POST',
+        headers: {
+          cookie: 'encontrei_session=sessao-segura',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          wentToBeach: false,
+          followedWindow: false,
+          decisionEffect: 'no_effect',
+          resultCategory: 'not_applicable',
+          informationCorrect: false,
+          phone: 'não deve ser coletado',
+        }),
+      },
+    );
+
+    expect(response.status).toBe(400);
   });
 });

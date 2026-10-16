@@ -4,6 +4,7 @@ export interface AcceptedInvitation {
 }
 
 export interface ParticipantSession {
+  invitationId: string;
   participantCode: string;
 }
 

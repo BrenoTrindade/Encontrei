@@ -25,6 +25,7 @@ import {
   scoreBandColor,
   scoreBandLabel,
 } from '../../utils/opportunityLabels';
+import OpportunityEngagementPanel from './OpportunityEngagementPanel';
 
 interface OpportunityDetailViewProps {
   id: string;
@@ -149,6 +150,8 @@ export default function OpportunityDetailView({
           comunique o IPHAN ou a autoridade responsável.
         </Typography>
       </Alert>
+
+      <OpportunityEngagementPanel opportunityId={detail.id} onUnauthorized={onUnauthorized} />
 
       <Typography variant="h5" component="h2" gutterBottom>
         Confiança dos dados

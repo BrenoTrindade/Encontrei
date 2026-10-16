@@ -1,5 +1,7 @@
 import type {
   OpportunityDetail,
+  OpportunityEngagementState,
+  OpportunityFeedbackInput,
   OpportunitySummary,
 } from '../types/opportunity';
 
@@ -60,4 +62,34 @@ export function getOpportunities(date: string): Promise<OpportunitySummary[]> {
 
 export function getOpportunity(id: string): Promise<OpportunityDetail> {
   return request(`/api/opportunities/${encodeURIComponent(id)}`);
+}
+
+export function getOpportunityEngagement(id: string): Promise<OpportunityEngagementState> {
+  return request(`/api/opportunities/${encodeURIComponent(id)}/engagement`);
+}
+
+export function saveOpportunity(
+  id: string,
+  intentToGo: boolean,
+): Promise<OpportunityEngagementState> {
+  return request(`/api/opportunities/${encodeURIComponent(id)}/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intentToGo }),
+  });
+}
+
+export function removeSavedOpportunity(id: string): Promise<void> {
+  return request(`/api/opportunities/${encodeURIComponent(id)}/save`, { method: 'DELETE' });
+}
+
+export function submitOpportunityFeedback(
+  id: string,
+  feedback: OpportunityFeedbackInput,
+): Promise<void> {
+  return request(`/api/opportunities/${encodeURIComponent(id)}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(feedback),
+  });
 }

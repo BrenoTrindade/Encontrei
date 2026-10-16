@@ -16,6 +16,7 @@ Implementado nesta fase:
 - score interno versionado com faixas explicáveis;
 - importação local auditável de marés oficiais do CHM e previsões ICON/GWAM via Open-Meteo;
 - indicação de confiança, validade, atribuição e limitações das fontes;
+- oportunidades salvas, intenção de visita e feedback ligados ao convite pseudônimo;
 - mapa complementar com Leaflet/OpenStreetMap.
 
 Ainda fora do escopo:

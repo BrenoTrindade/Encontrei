@@ -272,6 +272,34 @@ async function main(): Promise<void> {
       ${quoted(opportunity.generatedAtUtc)}, ${quoted(opportunity.staleAt)}, ${quoted(opportunity.expiresAt)},
       ${json(opportunity.inputs)}, 'published'
     ) ON CONFLICT(id) DO NOTHING;`);
+    statements.push(`INSERT INTO saved_opportunity (
+      invitation_id, opportunity_id, saved_at, intent_to_go
+    )
+    SELECT invitation_id, ${quoted(opportunity.id)}, saved_at, intent_to_go
+    FROM (
+      SELECT saved_opportunity.invitation_id, saved_opportunity.saved_at,
+        saved_opportunity.intent_to_go,
+        ROW_NUMBER() OVER (
+          PARTITION BY saved_opportunity.invitation_id
+          ORDER BY saved_opportunity.saved_at DESC, saved_opportunity.opportunity_id DESC
+        ) AS position
+      FROM saved_opportunity
+      INNER JOIN opportunity_snapshot AS previous
+        ON previous.id = saved_opportunity.opportunity_id
+      WHERE previous.beach_id = ${quoted(opportunity.beachId)}
+        AND previous.local_date = ${quoted(opportunity.localDate)}
+        AND previous.id <> ${quoted(opportunity.id)}
+    )
+    WHERE position = 1
+    ON CONFLICT(invitation_id, opportunity_id) DO NOTHING;`);
+    statements.push(`DELETE FROM saved_opportunity
+      WHERE opportunity_id IN (
+        SELECT id
+        FROM opportunity_snapshot
+        WHERE beach_id = ${quoted(opportunity.beachId)}
+          AND local_date = ${quoted(opportunity.localDate)}
+          AND id <> ${quoted(opportunity.id)}
+      );`);
   }
   statements.push('COMMIT;');
 

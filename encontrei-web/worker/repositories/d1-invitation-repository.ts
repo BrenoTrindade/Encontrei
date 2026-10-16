@@ -63,6 +63,6 @@ export class D1InvitationRepository implements InvitationRepository {
       .bind(new Date().toISOString(), invitation.id)
       .run();
 
-    return { participantCode: invitation.participant_code };
+    return { invitationId: invitation.id, participantCode: invitation.participant_code };
   }
 }
